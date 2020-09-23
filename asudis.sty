@@ -364,14 +364,18 @@ includehead,includefoot,letterpaper}%,showcrop,showframe}
 % Fix bibliography header.
 %
 \renewcommand\bibname{References}
-\renewcommand\bibsection{
-\begin{center}\uppercase\expandafter{\bibname}\vspace{1em}\end{center}
+% \renewcommand\bibsection{
+% \begin{center}\uppercase\expandafter{\bibname}\vspace{1em}\end{center}
+% }
+% Adam's fixes :)
+\defbibheading{bibliography}[\bibname]{%
+	\begin{center}\uppercase\expandafter{#1}\vspace{1em}\end{center}
 }
 		
 %
 % Modify figure captions so that they print singlespace.
 %
 \renewcommand{\@makecaption}[2]{% #1 is e.g. Figure 1, #2 is captiontext
-\singlespace
+\vspace{1em}\singlespace
 {\textbf{#1:} #2\par}
 }
