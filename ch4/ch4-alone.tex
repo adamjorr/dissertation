@@ -1,0 +1,29 @@
+% !TEX program=lualatex
+\RequirePackage{luatex85}
+\documentclass{report}
+\usepackage{geometry}
+\usepackage[style=nature, citestyle=authoryear]{biblatex}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{wrapfig}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{minted}
+
+%drafting packages
+\usepackage[doublespacing]{setspace}
+\usepackage{lineno}
+
+\newcommand{\titlecaption}[2]{\caption[#1]{\textbf{#1} \textbar\, #2}}
+\bibliography{citations.bib}
+\graphicspath{{./figures/}}
+
+\begin{document}
+\linenumbers
+\include{ch4}
+\printbibliography
+\include{appendix}
+\end{document}

@@ -1,6 +1,7 @@
 
 \documentclass[12pt,letterpaper]{report}
-\usepackage{natbib}
+% \usepackage{natbib}
+\usepackage[style=nature, citestyle=authoryear]{biblatex}
 \usepackage{geometry}
 %\usepackage{fancyheadings} fancyheadings is obsolete: replaced by fancyhdr. JL
 \usepackage{fancyhdr}
@@ -10,7 +11,19 @@
 \usepackage{dcolumn,array}
 \usepackage{tocloft}
 \usepackage{asudis}
-		
+%adam's packages
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{wrapfig}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{minted}
+\bibliography{ch4/citations}	
+
+\newcommand{\titlecaption}[2]{\caption[#1]{\textbf{#1} \textbar\, #2}}
+
 \begin{document}
 %-----------------------front matter
 \pagenumbering{roman}
@@ -57,14 +70,18 @@
 \pagenumbering{arabic}
 \include{chapter1}
 \include{chapter2}
+\graphicspath{{ch4/figures/}}
+\input{ch4/ch4}
 %-----------------------back matter
 {\singlespace
 % Making the references a "part" rather than a chapter gets it indented at
 % level -1 according to the chart: top of page 4 of the document at
 % ftp://tug.ctan.org/pub/tex-archive/macros/latex/contrib/tocloft/tocloft.pdf
 \addcontentsline{toc}{part}{REFERENCES}
-\bibliographystyle{asudis}
-\bibliography{dis}}
+% \bibliographystyle{asudis}
+%\bibliography{dis}
+\printbibliography[title=References]{}
+}
 \renewcommand{\chaptername}{APPENDIX}
 \addtocontents{toc}{APPENDIX \par}
 \appendix
