@@ -20,9 +20,11 @@
 \usepackage{tabularx}
 \usepackage{multirow}
 \usepackage{minted}
+\usepackage{textcase}
 \bibliography{ch4/citations}	
 
 \newcommand{\titlecaption}[2]{\caption[#1]{\textbf{#1} \textbar\, #2}}
+\newcommand{\cheatreference}{\ref{ch:kbbq}}
 
 \begin{document}
 %-----------------------front matter
@@ -37,8 +39,12 @@
 \maketitle
 \doublespace
 \include{abstract}
-\acknowledgementpage{}
-%\include{ack}
+
+\dedicationpage{For my family. They taught me to be curious, tenacious, and persistent; to believe in myself, do my best, and never give up.}
+
+\begin{acknowledgements}
+\input{ack}
+\end{acknowledgements}
 \tableofcontents
 % This puts the word "Page" right justified above everything else.
 \addtocontents{toc}{~\hfill Page\par}
@@ -64,14 +70,17 @@
 % This gets the headers for the LOF right on the first page.  Subsequent pages
 % are handled by the fancyhdr code in the asudis.sty file.
 
+\graphicspath{{ch4/figures/}}
 
 %-----------------------body
 \doublespace
 \pagenumbering{arabic}
-\include{chapter1}
-\include{chapter2}
-\graphicspath{{ch4/figures/}}
+\include{ch1/ch1}
+\input{ch2/ch2}
+\input{ch3/ch3}
 \input{ch4/ch4}
+\input{ch5/ch5}
+\input{ch6/ch6}
 %-----------------------back matter
 {\singlespace
 % Making the references a "part" rather than a chapter gets it indented at

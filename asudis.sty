@@ -138,8 +138,10 @@ ACKNOWLEDGMENTS
 \newcommand{\dedicationpage}[1]{
 \begin{center}
 \doublespace
-DEDICATION
+DEDICATION \\
+\vspace*{\fill}
 {\itshape #1}
+\vspace*{\fill}
 \end{center}
 \clearpage	
 }
@@ -332,7 +334,7 @@ includehead,includefoot,letterpaper}%,showcrop,showframe}
 \renewcommand{\@makechapterhead}[1]{
 \begin{center}
 \chaptername\ \thechapter\vspace{\baselineskip}\\
-\uppercase\expandafter{#1}\vspace{\baselineskip}
+\MakeTextUppercase{\expandafter{#1}}\vspace{\baselineskip}
 \end{center}
 }
 % Numbers chapters, sections, and subsections
@@ -376,6 +378,6 @@ includehead,includefoot,letterpaper}%,showcrop,showframe}
 % Modify figure captions so that they print singlespace.
 %
 \renewcommand{\@makecaption}[2]{% #1 is e.g. Figure 1, #2 is captiontext
-\vspace{1em}\singlespace
+\vspace{1em}\singlespace% vspace added by adam, otherwise it looks funky
 {\textbf{#1:} #2\par}
 }
