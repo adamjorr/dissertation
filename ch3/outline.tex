@@ -1,0 +1,57 @@
+% !TEX program=lualatex
+\RequirePackage{luatex85}
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[style=nature, citestyle=authoryear]{biblatex}
+\usepackage{tikz}
+\usepackage{wrapfig}
+\usepackage{lineno}
+\usepackage{outline}
+\usepackage{tabularx}
+\bibliography{citations.bib}
+\graphicspath{./figures/}
+
+\begin{document}
+\linenumbers
+
+\section{Introduction}
+\begin{outline}
+	\item Genotyping is a common task in biology.
+	\begin{outline}
+		\item Genotyping accurately and sensitively is difficult due to errors in sequencing reads.
+		\item This problem is exacerbated when genotyping non-model organisms because it may lack a polished annotated genome and other prior information that is sometimes used in genotyping pipelines, such as base quality score recalibration.
+	\end{outline}
+	\item Reference-free variant callers
+	\begin{outline}
+	\end{outline}
+	\item I previously called genotypes in the non-model organism \textit{Eucalyptus melliodora} using both out-of-the-box and custom methods to genotype leaves sampled across the tree. I leveraged the sample structure to estimate false positive and false negative rates for each step.
+
+\end{outline}
+
+\section{Methods}
+\begin{outline}
+	\item To understand how each filtering step affected the false positive and false negative rates, I estimated these rates at each step in the filtering process and evaluated how changes to filter paramaters affected the resulting phylogenies constructed using the resultant genotypes.
+	\item To evaluate the performance of NON-REF CALLER and investigate why its performance was so low on this data, I applied the same procedure to the results of those variant calls.
+\end{outline}
+
+\section{Results}
+\begin{outline}
+	\item Trees from each step for emel data
+	\item A table of filtering steps/false pos/false neg at each step for non-ref caller
+	\item A tree for each filter step for variants from non-ref caller
+\end{outline}
+
+\section{Discussion}
+\begin{outline}
+	\item High false positive rate and false negative rate severely impacted the ability of the non-ref caller to accurately identify mutations
+	\item X was the step that resulted in the best false pos/ false neg improvement for the reference-free caller. Compare this for best step in traditional pipeline.
+\end{outline}
+
+%\printbibliography
+
+\end{document}

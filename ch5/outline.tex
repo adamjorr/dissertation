@@ -1,0 +1,74 @@
+% !TEX program=lualatex
+\RequirePackage{luatex85}
+\documentclass{report}
+\usepackage{geometry}
+\usepackage[style=nature, citestyle=authoryear]{biblatex}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{wrapfig}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{minted}
+
+%drafting packages
+\usepackage[doublespacing]{setspace}
+\usepackage{lineno}
+
+\newcommand{\titlecaption}[2]{\caption[#1]{\textbf{#1} \textbar\, #2}}
+\bibliography{ch5.bib}
+\graphicspath{{./figures/}}
+
+\begin{document}
+\linenumbers
+
+\chapter{Evaluating the impact of quality score calibration on variant calling}
+
+\section{Introduction}
+\begin{outline}
+\item Brief overview of DNA sequencing; erroneous bases
+\item Variant calling
+	\begin{outline}
+	\item why is it used?
+	\end{outline}
+\item Quality scores, Base Quality Score Recalibration, and quality score binning
+\end{outline}
+
+\section{Methods}
+\begin{outline}
+\item Call variants with recalibrations of different quality
+\item Call variants with binned quality scores, with differing number of bins
+% if I have time, simulate some quality score differences and then call variants with those
+\item Evaluate variants
+\item Use KBBQ on the \textit{E. melliodora} data to call variants
+\item Use the tree structure to evaluate the variant calls
+\end{outline}
+
+\section{Results}
+\begin{outline}
+\item Call variants with recalibrations of different quality
+\item Call variants with binned quality scores, with differing number of bins
+% if I have time, simulate some quality score differences and then call variants with those
+\item Evaluate variants
+\item Use KBBQ on the \textit{E. melliodora} data to call variants
+\item Use the tree structure to evaluate the variant calls
+\end{outline}
+
+\section{Discussion}
+\begin{outline}
+\item As the quality of the calibration increases, the quality of the variant calls also slightly increases.
+\end{outline}
+
+\section{Conclusion}
+\begin{outline}
+\item Quality scores have a limited effect on the variants called
+\item Excessive binning removes quality score information and makes it difficult to call variants
+\item Use
+
+\end{outline}
+
+\printbibliography
+\end{document}
+
