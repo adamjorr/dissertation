@@ -370,9 +370,22 @@ includehead,includefoot,letterpaper}%,showcrop,showframe}
 % \begin{center}\uppercase\expandafter{\bibname}\vspace{1em}\end{center}
 % }
 % Adam's fixes :)
-\defbibheading{bibliography}[\bibname]{%
+\defbibheading{bibliography}[References]{%
 	\begin{center}\uppercase\expandafter{#1}\vspace{1em}\end{center}
 }
+
+% Enter single space before bibliography and return to double space after.
+\defbibenvironment{bibliography}
+  {\singlespace\list
+     {}
+     {\setlength{\leftmargin}{\bibhang}%
+      \setlength{\itemindent}{-\leftmargin}%
+      \setlength{\itemsep}{\bibitemsep}%
+      \setlength{\parsep}{\bibparsep}}}
+  {\endlist\doublespace}
+  {\item}
+
+
 		
 %
 % Modify figure captions so that they print singlespace.

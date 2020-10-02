@@ -1,7 +1,7 @@
 
 \documentclass[12pt,letterpaper]{report}
 % \usepackage{natbib}
-\usepackage[style=nature, citestyle=authoryear]{biblatex}
+\usepackage[style=nature, citestyle=authoryear, refsegment=chapter]{biblatex}
 \usepackage{geometry}
 %\usepackage{fancyheadings} fancyheadings is obsolete: replaced by fancyhdr. JL
 \usepackage{fancyhdr}
@@ -21,10 +21,14 @@
 \usepackage{multirow}
 \usepackage{minted}
 \usepackage{textcase}
-\bibliography{ch4/citations}	
+\addbibresource{ch4/citations.bib}	
+\addbibresource{ch5/ch5.bib}
 
-\newcommand{\titlecaption}[2]{\caption[#1]{\textbf{#1} \textbar\, #2}}
-\newcommand{\cheatreference}{\ref{ch:kbbq}}
+
+\newcommand{\titlecaption}[2]{\caption[#1]{\textbf{#1 \textbar\,} #2}}
+\newcommand{\protectedref}[1]{\ref{#1}}
+\newcommand{\phylogenomicref}{\ref{ch:phylogenomic}}
+\newcommand{\kbbqref}{\ref{ch:kbbq}}
 
 \begin{document}
 %-----------------------front matter
@@ -89,11 +93,15 @@
 \addcontentsline{toc}{part}{REFERENCES}
 % \bibliographystyle{asudis}
 %\bibliography{dis}
+
 \printbibliography[title=References]{}
+% \printbibheading[title=References]{}
+% \bibbysegment[heading=none]{}
 }
 \renewcommand{\chaptername}{APPENDIX}
 \addtocontents{toc}{APPENDIX \par}
 \appendix
+\include{ch2/permission}
 \include{appendix1}
 \include{vita}
 \end{document}

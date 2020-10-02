@@ -144,6 +144,7 @@ Notably, if $\alpha$ is the recommended value of $\frac{7}{\operatorname{Coverag
 \texttt{-\phantom{}-coverage} & \texttt{-c} & Estimated from data & Approximate sequencing coverage\\
 \texttt{-\phantom{}-fixed} & \texttt{-f} & Off & Treat changes to reads in the given file as errors and recalibrate. \\
 \texttt{-\phantom{}-alpha} & \texttt{-a} & 7 / coverage & Rate to sample k-mers\\
+\texttt{-\phantom{}-threads} & \texttt{-t} & 1 & Number of CPU threads to use\\
 \bottomrule
 \end{tabularx}
 \titlecaption{\texttt{kbbq} Parameters}{Provides the short options for each long parameter name, the default value of the parameter and a summary of how each parameter changes the behavior of the program.}
@@ -317,5 +318,7 @@ As the chimp-aligned calibration shows, GATK BQSR struggles on real data from no
 \section{Conclusion}
 
 Base quality score recalibration is an important procedure to ensure base quality scores are accurate before variant calling. However, the most popular method for doing BQSR is not easy to do if the sequenced organism is a non-model organism. I simulated sets of variable sites with varying false positive and false negative rates to use with BQSR. While it seems the simulated false positives are somewhat different from those that appear in real datasets, it is clear that false negatives severely reduce the quality of the calibration using GATK's method. I developed the software tool \texttt{kbbq} to recalibrate base quality scores without a reference or database of variable sites to overcome these deficiencies. Since it doesn't use a database of variable sites or a reference, the quality of these resources is immaterial to the quality of the resulting calibration. Finally, I emulated GATK's procedure for calibration when a database of variable sites is unavailable by aligning benchmark data to the chimp genome and calling variants to use as the database of variable sites. This method produces a calibration much worse than \texttt{kbbq}. Thus, when a database of variable sites or reference is unavailable or of poor quality, \texttt{kbbq} is an effective method for base quality score recalibration.
+
+\printbibliography{}
 
 	% \item Future work: see how big the difference is in variant calls using binned quality scores, miscalibrated reads, and well calibrated reads.

@@ -1,0 +1,67 @@
+
+@article{krusche_best_2018,
+	title = {Best Practices for Benchmarking Germline Small Variant Calls in Human Genomes},
+	rights = {© 2018, Posted by Cold Spring Harbor Laboratory. This pre-print is available under a Creative Commons License (Attribution 4.0 International), {CC} {BY} 4.0, as described at http://creativecommons.org/licenses/by/4.0/},
+	url = {https://www.biorxiv.org/content/10.1101/270157v3},
+	doi = {10.1101/270157},
+	abstract = {{\textless}h3{\textgreater}Abstract{\textless}/h3{\textgreater} {\textless}p{\textgreater}Standardized benchmarking methods and tools are essential to robust accuracy assessment of {NGS} variant calling. Benchmarking variant calls requires careful attention to definitions of performance metrics, sophisticated comparison approaches, and stratification by variant type and genome context. To address these needs, the Global Alliance for Genomics and Health ({GA}4GH) Benchmarking Team convened representatives from sequencing technology developers, government agencies, academic bioinformatics researchers, clinical laboratories, and commercial technology and bioinformatics developers for whom benchmarking variant calls is essential to their work. This team addressed challenges in (1) matching variant calls with different representations, (2) defining standard performance metrics, (3) enabling stratification of performance by variant type and genome context, and (4) developing and describing limitations of high-confidence calls and regions that can be used as “truth”. Our methods are publicly available on {GitHub} (https://github.com/ga4gh/benchmarking-tools) and in a web-based app on {precisionFDA}, which allow users to compare their variant calls against truth sets and to obtain a standardized report on their variant calling performance. Our methods have been piloted in the {precisionFDA} variant calling challenges to identify the best-in-class variant calling methods within high-confidence regions. Finally, we recommend a set of best practices for using our tools and critically evaluating the results.{\textless}/p{\textgreater}},
+	pages = {270157},
+	journaltitle = {{bioRxiv}},
+	author = {Krusche, Peter and Trigg, Len and Boutros, Paul C. and Mason, Christopher E. and Vega, Francisco M. De La and Moore, Benjamin L. and Gonzalez-Porta, Mar and Eberle, Michael A. and Tezak, Zivana and Labadibi, Samir and Truty, Rebecca and Asimenos, George and Funke, Birgit and Fleharty, Mark and Chapman, Brad A. and Salit, Marc and Zook, Justin M. and Team, \{and\} the Global Alliance for Genomics \{and\} Health Benchmarking},
+	urldate = {2020-09-24},
+	date = {2018-05-24},
+	langid = {english},
+	file = {Full Text PDF:/home/adam/Zotero/storage/25PNJJ9M/Krusche et al. - 2018 - Best Practices for Benchmarking Germline Small Var.pdf:application/pdf;Snapshot:/home/adam/Zotero/storage/BUJ3ELNF/270157v3.html:text/html}
+}
+
+@article{cleary_comparing_2015,
+	title = {Comparing Variant Call Files for Performance Benchmarking of Next-Generation Sequencing Variant Calling Pipelines},
+	rights = {© 2015, Posted by Cold Spring Harbor Laboratory. This pre-print is available under a Creative Commons License (Attribution-{NoDerivs} 4.0 International), {CC} {BY}-{ND} 4.0, as described at http://creativecommons.org/licenses/by-nd/4.0/},
+	url = {https://www.biorxiv.org/content/10.1101/023754v2},
+	doi = {10.1101/023754},
+	abstract = {{\textless}h3{\textgreater}{ABSTRACT}{\textless}/h3{\textgreater} {\textless}h3{\textgreater}Summary{\textless}/h3{\textgreater} {\textless}p{\textgreater}To evaluate and compare the performance of variant calling methods and their confidence scores, comparisons between a \textit{test call} set and a \textit{“gold standard”} need to be carried out. Unfortunately, these comparisons are not straightforward with the current Variant Call Files ({VCF}), which are the standard output of most variant calling algorithms for high-throughput sequencing data. Comparisons of {VCFs} are often confounded by the different representations of indels, {MNPs}, and combinations thereof with {SNVs} in complex regions of the genome, resulting in misleading results. A variant caller is inherently a classification method designed to score putative variants with confidence scores that could permit controlling the rate of false positives ({FP}) or false negatives ({FN}) for a given application. Receiver operator curves ({ROC}) and the area under the {ROC} ({AUC}) are efficient metrics to evaluate a test call set versus a gold standard. However, in the case of {VCF} data this also requires a special accounting to deal with discrepant representations. We developed a novel algorithm for comparing variant call sets that deals with complex call representation discrepancies and through a dynamic programing method that minimizes false positives and negatives globally across the entire call sets for accurate performance evaluation of {VCFs}.{\textless}/p{\textgreater}{\textless}h3{\textgreater}Availability{\textless}/h3{\textgreater} {\textless}p{\textgreater}{RTG} Tools is implemented as a multithreaded Java application and source code is available under {BSD} license at: https://github.com/{RealTimeGenomics}/rtg-tools{\textless}/p{\textgreater}{\textless}h3{\textgreater}Contact{\textless}/h3{\textgreater} {\textless}p{\textgreater}len@realtimegenomics.com{\textless}/p{\textgreater}{\textless}h3{\textgreater}Supplementary information{\textless}/h3{\textgreater} {\textless}p{\textgreater}Supplementary data are available at \textit{Bioinformatics online}.{\textless}/p{\textgreater}},
+	pages = {023754},
+	journaltitle = {{bioRxiv}},
+	author = {Cleary, John G. and Braithwaite, Ross and Gaastra, Kurt and Hilbush, Brian S. and Inglis, Stuart and Irvine, Sean A. and Jackson, Alan and Littin, Richard and Rathod, Mehul and Ware, David and Zook, Justin M. and Trigg, Len and Vega, Francisco M. De La},
+	urldate = {2020-09-24},
+	date = {2015-08-03},
+	langid = {english},
+	file = {Full Text PDF:/home/adam/Zotero/storage/MZVXA6HW/Cleary et al. - 2015 - Comparing Variant Call Files for Performance Bench.pdf:application/pdf;Snapshot:/home/adam/Zotero/storage/YLQEC2KY/023754v2.html:text/html}
+}
+
+
+@article{auwera_fastq_2013,
+	title = {From {FastQ} Data to High-Confidence Variant Calls: The Genome Analysis Toolkit Best Practices Pipeline},
+	volume = {43},
+	rights = {Copyright © 2013 John Wiley \& Sons, Inc.},
+	issn = {1934-340X},
+	url = {https://currentprotocols.onlinelibrary.wiley.com/doi/abs/10.1002/0471250953.bi1110s43},
+	doi = {10.1002/0471250953.bi1110s43},
+	shorttitle = {From {FastQ} Data to High-Confidence Variant Calls},
+	abstract = {This unit describes how to use {BWA} and the Genome Analysis Toolkit ({GATK}) to map genome sequencing data to a reference and produce high-quality variant calls that can be used in downstream analyses. The complete workflow includes the core {NGS} data-processing steps that are necessary to make the raw data suitable for analysis by the {GATK}, as well as the key methods involved in variant discovery using the {GATK}. Curr. Protoc. Bioinform. 43:11.10.1-11.10.33. © 2013 by John Wiley \& Sons, Inc.},
+	pages = {11.10.1--11.10.33},
+	number = {1},
+	journaltitle = {Current Protocols in Bioinformatics},
+	author = {Auwera, Geraldine A. Van der and Carneiro, Mauricio O. and Hartl, Christopher and Poplin, Ryan and Angel, Guillermo del and Levy‐Moonshine, Ami and Jordan, Tadeusz and Shakir, Khalid and Roazen, David and Thibault, Joel and Banks, Eric and Garimella, Kiran V. and Altshuler, David and Gabriel, Stacey and {DePristo}, Mark A.},
+	urldate = {2020-09-30},
+	date = {2013},
+	langid = {english},
+	keywords = {exome, genotyping, {NGS}, variant detection, {WGS}},
+	file = {Accepted Version:/home/adam/Zotero/storage/9LYILMVH/Auwera et al. - 2013 - From FastQ Data to High-Confidence Variant Calls .pdf:application/pdf;Snapshot:/home/adam/Zotero/storage/XRAR8EE3/0471250953.html:text/html}
+}
+
+@article{orr_phylogenomic_2020,
+	title = {A phylogenomic approach reveals a low somatic mutation rate in a long-lived plant},
+	volume = {287},
+	url = {https://royalsocietypublishing.org/doi/10.1098/rspb.2019.2364},
+	doi = {10.1098/rspb.2019.2364},
+	abstract = {Somatic mutations can have important effects on the life history, ecology, and evolution of plants, but the rate at which they accumulate is poorly understood and difficult to measure directly. Here, we develop a method to measure somatic mutations in individual plants and use it to estimate the somatic mutation rate in a large, long-lived, phenotypically mosaic Eucalyptus melliodora tree. Despite being 100 times larger than Arabidopsis, this tree has a per-generation mutation rate only ten times greater, which suggests that this species may have evolved mechanisms to reduce the mutation rate per unit of growth. This adds to a growing body of evidence that illuminates the correlated evolutionary shifts in mutation rate and life history in plants.},
+	pages = {20192364},
+	number = {1922},
+	journaltitle = {Proceedings of the Royal Society B: Biological Sciences},
+	shortjournal = {Proceedings of the Royal Society B: Biological Sciences},
+	author = {Orr, Adam J. and Padovan, Amanda and Kainer, David and Külheim, Carsten and Bromham, Lindell and Bustos-Segura, Carlos and Foley, William and Haff, Tonya and Hsieh, Ji-Fan and Morales-Suarez, Alejandro and Cartwright, Reed A. and Lanfear, Robert},
+	urldate = {2020-09-30},
+	date = {2020-03-11},
+	file = {Full Text PDF:/home/adam/Zotero/storage/YSAHVGXD/Orr et al. - 2020 - A phylogenomic approach reveals a low somatic muta.pdf:application/pdf;Snapshot:/home/adam/Zotero/storage/UAV3PBLQ/rspb.2019.html:text/html}
+}
