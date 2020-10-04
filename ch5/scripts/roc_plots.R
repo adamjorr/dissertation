@@ -1,4 +1,4 @@
-#!/usr/bin/env Rscript
+    #!/usr/bin/env Rscript
 
 #ROCs on ROCs on ROCs!!
 
@@ -21,16 +21,20 @@ get_roc_path <- function(prefix, type){
 # --- Get Data Frame ---
 import_rtg_rocs <- function(fnr, fpr, type){
   prefixes <- unlist(map(fnr, paste0, '_', fpr))
+  prefixes <- c(prefixes, "raw","cbbq")
   roc_files <- get_roc_path(prefixes, type)
   dfs <- map(roc_files, read_tsv, comment = "#",
              col_names = c(
                type,"TPb","FP","TPc", "FN", "precision", "sensitivity", "f"))
+  prefixes[(length(prefixes)-1):length(prefixes)] = c("raw_raw","kbbq_kbbq")
   names(dfs) <- prefixes
   notempty <- map_lgl(dfs, ~dim(.)[1] != 0)
   dfs <- dfs[notempty]
   bind_rows(dfs, .id = 'FNR_FPR') %>%
   separate(FNR_FPR, into = c("FalseNegativeRate","FalsePositiveRate"),
            sep = "_", convert = TRUE) %>%
+  mutate(across(c(FalseNegativeRate,FalsePositiveRate),
+                ~factor(., levels = c("raw","kbbq",0,20,40,60,80,100)))) %>%
   group_by(FalseNegativeRate,FalsePositiveRate) %>%
   filter(FalsePositiveRate != 100)
 }
@@ -42,19 +46,32 @@ rate_labeller <- labeller(
 
 # --- Make plots ---
 
+r_factor <- function(v){factor({{v}}, levels = c("kbbq","raw",0,20,40,60,80,100))}
+
 plot_roc <- function(df){
+  just_empirical <- df %>%
+    ungroup() %>%
+    filter(FalseNegativeRate == "kbbq" | FalseNegativeRate == "raw") %>%
+    select(FalseNegativeRate, FP, TPc)
+  
   df %>%
     unite("FNR_FPR", c(FalseNegativeRate,FalsePositiveRate), remove = FALSE) %>%
+    mutate(FalsePositiveRate = factor(FalsePositiveRate)) %>%
+    mutate(FalsePositiveRate = fct_collapse(FalsePositiveRate,
+      empirical = c('kbbq','raw')
+    )) %>%
     ggplot(aes(FP,TPc)) +
     facet_grid(rows = vars(FalsePositiveRate), as.table = FALSE, 
                margins = TRUE, labeller = rate_labeller) +
-    geom_line(aes(color = factor(FalseNegativeRate), group = FNR_FPR)) +
+    # geom_line(aes(color = factor(FalseNegativeRate, levels = c("raw",0,20,40,60,80,100)), group = FNR_FPR)) +
+    geom_line(aes(color = FalseNegativeRate, group = FNR_FPR)) +
     scale_color_viridis_d('Variable\nSites\nFNR', option = 'viridis') +
     xlab("False Positive Calls") +
     ylab("True Positive Calls") +
     theme_minimal(base_size = 18) + 
     theme(plot.margin = margin(0,0,0,0),
-          strip.text.y = element_text(angle = 0))
+          strip.text.y = element_text(angle = 0)) +
+    geom_line(data = just_empirical, aes(color = FalseNegativeRate, group = FalseNegativeRate)) #add empirical on top of every plot
 }
 
 plot_sen_prec <- function(df){
@@ -141,7 +158,7 @@ fpr <- seq(0,100,20)
 qualroc <- import_rtg_rocs(fpr,fpr,"QUAL")
 
 pdf("../figures/qualroc.pdf", width = 9, height = 7)
-qualroc %>% plot_roc() +
+qualroc %>% plot_roc() + xlim(0,3000) +
   ggtitle("Better Calibration Makes QUAL A Better Classifier")
 dev.off()
 

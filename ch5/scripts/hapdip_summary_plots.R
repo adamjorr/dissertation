@@ -18,9 +18,11 @@ get_summary_path <- function(prefix){
 # --- Import Dataframe ---
 import_fnrfpr_tsvs <- function(fnr, fpr){
   prefixes <- unlist(map(fnr, paste0, '_', fpr))
+  prefixes <- c(prefixes, "raw","cbbq")
   summary_files <- get_summary_path(prefixes)
   dfs <- map(summary_files, read_tsv,
              col_names = c("mode","type","operator","value"))
+  prefixes[(length(prefixes)-1):length(prefixes)] = c("raw_raw","kbbq_kbbq")
   names(dfs) <- prefixes
   # notempty <- map_lgl(dfs, ~dim(.)[1] != 0)
   # dfs <- dfs[notempty]
@@ -33,7 +35,9 @@ import_fnrfpr_tsvs <- function(fnr, fpr){
     rename(FNR = all_of(fnr_var)) %>%
     rename(FDR = all_of(fdr_var)) %>%
     mutate(FDR = FDR/100) %>%
-    mutate(FNR = FNR/100)
+    mutate(FNR = FNR/100) %>%
+    mutate(across(c(FalseNegativeRate,FalsePositiveRate),
+          ~factor(., levels = c("raw","kbbq",0,20,40,60,80,100))))
 }
 
 # --- Manipulate Dataframe ---
@@ -71,8 +75,8 @@ df %>%
   ggplot(aes(FalseNegativeRate,FalsePositiveRate)) +
   geom_raster(aes(fill = TP)) +
   scale_fill_viridis_c("TP Calls") +
-  scale_x_continuous("Variable Sites FNR") +
-  scale_y_continuous("Variable Sites FPR") +
+  scale_x_discrete("Variable Sites FNR") +
+  scale_y_discrete("Variable Sites FPR") +
   ggtitle("Better Calibration Increases\nTrue Positive Calls") +
   theme_minimal(base_size = 18) + 
   theme(plot.margin = margin(0,0,0,0))
@@ -84,25 +88,26 @@ df %>%
   ggplot(aes(FalseNegativeRate,FalsePositiveRate)) +
   geom_raster(aes(fill = FP)) +
   scale_fill_viridis_c("FP Calls") +
-  scale_x_continuous("Variable Sites FNR") +
-  scale_y_continuous("Variable Sites FPR") +
+  scale_x_discrete("Variable Sites FNR") +
+  scale_y_discrete("Variable Sites FPR") +
   ggtitle("Better Calibration Increases\nFalse Positive Calls") +
   theme_minimal(base_size = 18) + 
   theme(plot.margin = margin(0,0,0,0))
 dev.off()
 
 #Shown together
-pdf("../figures/tp_fp_plot.pdf", width = 9, height = 7)
+pdf("../figures/tp_fp_plot.pdf", width = 4, height = 9)
 df %>% ggplot(aes(TP, FP)) +
   geom_point(aes(color = factor(FalseNegativeRate))) +
   coord_fixed(ratio = 1) +
-  geom_segment(
-    aes(x = 267750, y = 7200, xend = 268050, yend = 7200 + (268050-267750))) +
+  # geom_segment(
+  #   aes(x = 267750, y = 7200, xend = 268050, yend = 7200 + (268050-267750))) +
   scale_color_viridis_d("Variable\nSites\nFNR", option = 'viridis') +
   ggtitle("Better Calibration Produces\nMore Positive Calls") +
   theme_minimal(base_size = 18) + 
   theme(plot.margin = margin(0,0,0,0),
-        axis.text = element_text(size = rel(.5)))
+        axis.text = element_text(size = rel(.5)),
+        axis.text.x = element_text(angle = 45, hjust = 1))
 dev.off()
 
 #This leads to an increase in sensitivity
@@ -134,7 +139,7 @@ df %>%
 dev.off()
 
 #Shown together:
-pdf("../figures/sens_precision.pdf", width = 9, height = 7)
+pdf("../figures/sens_precision.pdf", width = 10, height = 7)
 df %>% ggplot(aes(precision, recall)) +
   geom_point(aes(color = factor(FalseNegativeRate))) +
   coord_fixed(ratio = 1) +
@@ -152,8 +157,8 @@ dev.off()
 pdf("../figures/f_plot.pdf", width = 9, height = 7)
 df %>%
   ggplot(aes(FalsePositiveRate, f)) +
-  geom_point(aes(color = factor(FalseNegativeRate))) +
-  geom_line(aes(color = factor(FalseNegativeRate))) +
+  geom_point(aes(color = FalseNegativeRate)) +
+  geom_line(aes(color = FalseNegativeRate, group = FalseNegativeRate)) +
   scale_color_viridis_d("Variable\nSites\nFNR", option = "viridis") +
   ggtitle("Better Calibration Yields\nLower Call F-statistic") + 
   theme_minimal(base_size = 18) + 
@@ -176,9 +181,11 @@ dev.off()
 # --- Import Dataframe ---
 import_flt_tsvs <- function(fnr, fpr){
   prefixes <- unlist(map(fnr, paste0, '_', fpr))
+  prefixes <- c(prefixes, "raw","cbbq")
   summary_files <- get_summary_path(paste0('flt/',prefixes,'_flt'))
   dfs <- map(summary_files, read_tsv,
              col_names = c("mode","type","operator","value"))
+  prefixes[(length(prefixes)-1):length(prefixes)] = c("raw_raw","kbbq_kbbq")
   names(dfs) <- prefixes
   # notempty <- map_lgl(dfs, ~dim(.)[1] != 0)
   # dfs <- dfs[notempty]
@@ -191,7 +198,9 @@ import_flt_tsvs <- function(fnr, fpr){
     rename(FNR = all_of(fnr_var)) %>%
     rename(FDR = all_of(fdr_var)) %>%
     mutate(FDR = FDR/100) %>%
-    mutate(FNR = FNR/100)
+    mutate(FNR = FNR/100) %>% 
+    mutate(across(c(FalseNegativeRate,FalsePositiveRate),
+                  ~factor(., levels = c("raw","kbbq",0,20,40,60,80,100))))
 }
 
 # -- Main ---
@@ -208,8 +217,8 @@ fltdf %>%
   ggplot(aes(FalseNegativeRate,FalsePositiveRate)) +
   geom_raster(aes(fill = TP)) +
   scale_fill_viridis_c("TP Calls") +
-  scale_x_continuous("Variable Sites FNR") +
-  scale_y_continuous("Variable Sites FPR") +
+  scale_x_discrete("Variable Sites FNR") +
+  scale_y_discrete("Variable Sites FPR") +
   ggtitle("Better Calibration Increases True Positive Calls") +
   theme_minimal(base_size = 18) + 
   theme(plot.margin = margin(0,0,0,0))
@@ -221,15 +230,15 @@ fltdf %>%
   ggplot(aes(FalseNegativeRate,FalsePositiveRate)) +
   geom_raster(aes(fill = FP)) +
   scale_fill_viridis_c("FP Calls") +
-  scale_x_continuous("Variable Sites FNR") +
-  scale_y_continuous("Variable Sites FPR") +
+  scale_x_discrete("Variable Sites FNR") +
+  scale_y_discrete("Variable Sites FPR") +
   ggtitle("Better Calibration Increases False Positive Calls") +
   theme_minimal(base_size = 18) + 
   theme(plot.margin = margin(0,0,0,0))
 dev.off()
 
 #Shown together
-pdf("../figures/tp_fp_plot.pdf", width = 10, height = 6)
+pdf("../figures/flt_tp_fp_plot.pdf", width = 10, height = 6)
 fltdf %>% ggplot(aes(TP, FP)) +
   geom_point(aes(color = factor(FalseNegativeRate))) +
   coord_fixed(ratio = 1) +
@@ -271,7 +280,7 @@ fltdf %>%
 dev.off()
 
 #Shown together:
-pdf("../figures/flt_sens_precision.pdf", width = 9, height = 7)
+pdf("../figures/flt_sens_precision.pdf", width = 4, height = 9)
 fltdf %>% ggplot(aes(precision, recall)) +
   geom_point(aes(color = factor(FalseNegativeRate))) +
   coord_fixed(ratio = 1) +
@@ -281,16 +290,27 @@ fltdf %>% ggplot(aes(precision, recall)) +
   scale_y_continuous("Sensitivity") +
   theme_minimal(base_size = 18) + 
   theme(plot.margin = margin(0,0,0,0),
-        axis.text = element_text(size = rel(.5)))
+        axis.text = element_text(size = rel(.5)),
+        axis.text.x = element_text(angle = 45, hjust = 1))
 dev.off()
+
+#Show before/after filtering of sensitivity and precision:
+bothdf <- bind_rows(before = df, after = fltdf, .id = "filtering") %>%
+  pivot_wider(id_cols = c(FalseNegativeRate, FalsePositiveRate),
+              names_from = filtering, values_from = c(recall, precision))
+bothdf %>% ggplot(aes(precision_before, recall_before)) +
+  geom_segment(aes(xend = precision_after, yend = recall_after,
+                   color = factor(FalseNegativeRate)),
+               arrow = arrow()) +
+  scale_color_viridis_d("Variable\nSites\nFNR", option = 'viridis')
 
 # In contrast to the pre-filtration data, the best-calibrated data now
 # has the best F-statstic
 pdf("../figures/flt_f_plot.pdf", width = 9, height = 7)
 fltdf %>%
   ggplot(aes(FalsePositiveRate, f)) +
-  geom_point(aes(color = factor(FalseNegativeRate))) +
-  geom_line(aes(color = factor(FalseNegativeRate))) +
+  geom_point(aes(color = FalseNegativeRate)) +
+  geom_line(aes(color = FalseNegativeRate, group = FalseNegativeRate)) +
   scale_color_viridis_d("Variable\nSites\nFNR", option = "viridis") +
   ggtitle("After Filtering,\nBetter Calibration Yields\nHigher Call F-statistic") + 
   theme_minimal(base_size = 18) + 

@@ -26,11 +26,13 @@
 		\item Genotyping accurately and sensitively is difficult due to errors in sequencing reads.
 		\item This problem is exacerbated when genotyping non-model organisms because it may lack a polished annotated genome and other prior information that is sometimes used in genotyping pipelines, such as base quality score recalibration.
 	\end{outline}
+	\item Why is genotyping cool and important?
 	\item Reference-free variant callers
 	\begin{outline}
 	\end{outline}
 	\item I previously called genotypes in the non-model organism \textit{Eucalyptus melliodora} using both out-of-the-box and custom methods to genotype leaves sampled across the tree. I leveraged the sample structure to estimate false positive and false negative rates for each step.
 	\item Compare using a full likelihood framework like DeNovoGear to doing something similar with just the ultimate variant calls
+	\item When I began the Euc work, the available reference-free methods were not sufficiently developed to call variants with the necessary accuracy that we required. Notably, we tried DiscoSNP++ and Cortex with limited success. Since then, a new method has been published (cite) and I was interested in whether it would work for the same data.
 
 \end{outline}
 
