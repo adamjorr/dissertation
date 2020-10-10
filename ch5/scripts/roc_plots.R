@@ -190,5 +190,33 @@ dev.off()
 # gqroc %>% plot_roc_avgf()
 
 # Better calibration reduces the power of GQ, but increases the power of QUAL
+bcftools_data_dir <- function(path){
+  return(paste0("../data/bcftools_roc/", path))
+}
+
+bcftools_roc_path <- function(prefix, type){
+  return(bcftools_data_dir(paste0(prefix, "_", type, ".snp_roc.tsv.gz")))
+}
+
+import_bcftools_rocs <- function(fnr, fpr, type){
+  prefixes <- unlist(map(fnr, paste0, '_', fpr))
+  prefixes <- c(prefixes, "raw","cbbq")
+  roc_files <- bcftools_roc_path(prefixes, type)
+  dfs <- map(roc_files, read_tsv, comment = "#",
+             col_names = c(
+               type,"TPb","FP","TPc", "FN", "precision", "sensitivity", "f"))
+  prefixes[(length(prefixes)-1):length(prefixes)] = c("raw_raw","kbbq_kbbq")
+  names(dfs) <- prefixes
+  notempty <- map_lgl(dfs, ~dim(.)[1] != 0)
+  dfs <- dfs[notempty]
+  bind_rows(dfs, .id = 'FNR_FPR') %>%
+    separate(FNR_FPR, into = c("FalseNegativeRate","FalsePositiveRate"),
+             sep = "_", convert = TRUE) %>%
+    mutate(across(c(FalseNegativeRate,FalsePositiveRate),
+                  ~factor(., levels = c("raw","kbbq",0,20,40,60,80,100)))) %>%
+    group_by(FalseNegativeRate,FalsePositiveRate) %>%
+    filter(FalsePositiveRate != 100)
+}
+
 
 

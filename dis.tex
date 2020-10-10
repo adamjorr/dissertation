@@ -1,7 +1,7 @@
 
 \documentclass[12pt,letterpaper]{report}
 % \usepackage{natbib}
-\usepackage[style=nature, citestyle=authoryear, refsegment=chapter]{biblatex}
+\usepackage[style=nature, citestyle=authoryear, refsection=chapter]{biblatex}
 \usepackage{geometry}
 %\usepackage{fancyheadings} fancyheadings is obsolete: replaced by fancyhdr. JL
 \usepackage{fancyhdr}
@@ -29,6 +29,12 @@
 \newcommand{\protectedref}[1]{\ref{#1}}
 \newcommand{\phylogenomicref}{\ref{ch:phylogenomic}}
 \newcommand{\kbbqref}{\ref{ch:kbbq}}
+\newcommand{\includetwo}[2]{\begin{minipage}{.475\textwidth}%
+\includegraphics[width = \textwidth]{#1}%
+\end{minipage}\hfill\begin{minipage}{.475\textwidth}%
+\includegraphics[width = \textwidth]{#2}%
+\end{minipage}}
+
 
 \begin{document}
 %-----------------------front matter
@@ -74,7 +80,7 @@
 % This gets the headers for the LOF right on the first page.  Subsequent pages
 % are handled by the fancyhdr code in the asudis.sty file.
 
-\graphicspath{{ch4/figures/}}
+\graphicspath{{ch4/figures/}{ch5/figures/}{ch3/figures/}}
 
 %-----------------------body
 \doublespace

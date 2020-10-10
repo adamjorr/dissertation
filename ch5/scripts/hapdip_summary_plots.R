@@ -40,6 +40,30 @@ import_fnrfpr_tsvs <- function(fnr, fpr){
           ~factor(., levels = c("raw","kbbq",0,20,40,60,80,100))))
 }
 
+import_bcftools_tsvs <- function(fnr, fpr){
+  prefixes <- unlist(map(fnr, paste0, '_', fpr))
+  prefixes <- c(prefixes, "raw","cbbq")
+  summary_files <- get_summary_path(paste0("bcftools/",prefixes))
+  dfs <- map(summary_files, read_tsv,
+             col_names = c("mode","type","operator","value"))
+  prefixes[(length(prefixes)-1):length(prefixes)] = c("raw_raw","kbbq_kbbq")
+  names(dfs) <- prefixes
+  # notempty <- map_lgl(dfs, ~dim(.)[1] != 0)
+  # dfs <- dfs[notempty]
+  fnr_var <- sym('%FNR')
+  fdr_var <- sym('%FDR')
+  bind_rows(dfs, .id = 'FNR_FPR') %>%
+    pivot_wider(names_from = operator, values_from = value) %>%
+    separate(FNR_FPR, into = c("FalseNegativeRate","FalsePositiveRate"),
+             sep = "_", convert = TRUE) %>%
+    rename(FNR = all_of(fnr_var)) %>%
+    rename(FDR = all_of(fdr_var)) %>%
+    mutate(FDR = FDR/100) %>%
+    mutate(FNR = FNR/100) %>%
+    mutate(across(c(FalseNegativeRate,FalsePositiveRate),
+                  ~factor(., levels = c("raw","kbbq",0,20,40,60,80,100))))
+}
+
 # --- Manipulate Dataframe ---
 only_snps <- function(df){
   df %>%
@@ -203,6 +227,30 @@ import_flt_tsvs <- function(fnr, fpr){
                   ~factor(., levels = c("raw","kbbq",0,20,40,60,80,100))))
 }
 
+import_bcftools_flt_tsvs <- function(fnr, fpr){
+  prefixes <- unlist(map(fnr, paste0, '_', fpr))
+  prefixes <- c(prefixes, "raw","cbbq")
+  summary_files <- get_summary_path(paste0('bcftools_flt/',prefixes,'_flt'))
+  dfs <- map(summary_files, read_tsv,
+             col_names = c("mode","type","operator","value"))
+  prefixes[(length(prefixes)-1):length(prefixes)] = c("raw_raw","kbbq_kbbq")
+  names(dfs) <- prefixes
+  # notempty <- map_lgl(dfs, ~dim(.)[1] != 0)
+  # dfs <- dfs[notempty]
+  fnr_var <- sym('%FNR')
+  fdr_var <- sym('%FDR')
+  bind_rows(dfs, .id = 'FNR_FPR') %>%
+    pivot_wider(names_from = operator, values_from = value) %>%
+    separate(FNR_FPR, into = c("FalseNegativeRate","FalsePositiveRate"),
+             sep = "_", convert = TRUE) %>%
+    rename(FNR = all_of(fnr_var)) %>%
+    rename(FDR = all_of(fdr_var)) %>%
+    mutate(FDR = FDR/100) %>%
+    mutate(FNR = FNR/100) %>% 
+    mutate(across(c(FalseNegativeRate,FalsePositiveRate),
+                  ~factor(., levels = c("raw","kbbq",0,20,40,60,80,100))))
+}
+
 # -- Main ---
 fltdf <- import_flt_tsvs(fnr,fnr) %>%
   calc_f_and_filter()
@@ -330,4 +378,8 @@ fltdf %>%
   theme_minimal(base_size = 18) + 
   theme(plot.margin = margin(0,0,0,0))
 dev.off()
+
+
+
+
 

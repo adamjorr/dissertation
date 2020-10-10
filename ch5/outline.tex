@@ -41,10 +41,19 @@
 \item Variant calling
 	\begin{outline}
 	\item Because of this error, the same piece of DNA is usually sequenced multiple times to attempt to get multiple measurements and a model is applied to infer the sample genotype. While a few sequencing errors do not impede accurate inference of the genotype of a monoploid sample, sequencing errors can be difficult to distinguish from heterozygosity in diploid organisms. This problem is even more difficult for samples with higher ploidy. However, using a statistical model enables a systematic approach to genotyping every site in the genome.
-	\item Additionally, a model allows the incorporation of auxiliary information when deciding the genotype at a site in a sample. For example, variant calling models often incorporate population genetic parameters that can help distinguish between sequencing errors and biological variation. The expected heterozygosity parameter \theta is particularly important;
+	\item Additionally, a model allows the incorporation of auxiliary information when deciding the genotype at a site in a sample. For example, variant calling models often incorporate population genetic parameters that can help distinguish between sequencing errors and biological variation. The expected heterozygosity parameter \theta is particularly important; it usually paramaterizes some prior on the probability of a base matching the reference genome. If this deviates significantly from the true value, the model may mistakenly classify truly heterozygous sites as errors or vice versa.
 	\end{outline}
-	\item Talk about how MAQ improved variant calls by integrating alignment error, so improving base quality should also lead to improved variant calls.
 \item Quality scores, Base Quality Score Recalibration, and quality score binning
+	\begin{outline}
+	\item The goal of using a model to call variants is to integrate a wide variety of information to make a principled decision about whether or not a variant exists. An important source of information on the trustworthiness of each sequenced base is the base quality score. This is a score, usually between 2 and 43, that encodes the probability the sequence is an error in the Phred scale. That is, the score $Q = -10\log_{10}P(\operatorname{Base is an error})$. This number is then rounded to the nearest integer and encoded as a character, shifted by 33, in the sequencing data.
+	\item Since these numbers can vary significantly in the same line with few patterns, quality scores can't usually be compressed very well by common compression algorithms. That gives sequencing data large filesizes that make it expensive to store the data for a lengthy period of time. Thus, these quality scores are often binned to reduce the amount of variation in the scores, enabling improved compression. Most binning methods attempt to do so in a way that minimizes the difference between the error rate of the bin and the error rate the bin should have according to its assigned score. However, there can still be a disconnect between the predicted error rate and the actual error rate. Furthermore, as the resolution of quality scores is reduced, some information about the true score at each base is lost.
+
+	\item To restore quality score resolution before analysis and to ensure quality scores accurately reflect the probability of error at every base, a process known as base quality score recalibration (BQSR) is sometimes performed. This attempts to use known information about sequencing errors to calibrate the quality scores. The most common method for doing so requires aligned reads and a set of variable sites that are removed from analysis. The algorithm then looks for bases that do not match the reference, assumes they are errors, and uses those errors to recalibrate the quality scores. See Chapter \ref{ch:kbbq} for more information on quality scores and base quality score recalibration.
+	
+	\item The ultimate goal of quality scores and base quality score recalibration is to make it easier to identify erroneous bases, which should improve the set of variants a variant caller emits. However, evidence supporting the use of base quality score recalibration is limited and whether base quality score recalibration is worthwhile is subject to debate. The procedure has aided in detecting rare variants \parencite{ni_improvement_2016}, and a recalibration procedure that integrates mapping errors into quality scores seems to improve variant detection \parencite{li_improving_2011}. The goal of this chapter is to investigate the degree that base quality score recalibration affects variant calling to enable informed decisions for constructing variant calling pipelines, especially for non-model organisms.
+	
+	\end{outline}
+
 \end{outline}
 
 \section{Methods}
@@ -73,7 +82,8 @@
 %TODO: add TP/FP and prec/recall range differences to text
 %TODO: add in the raw, uncalibrated data and see where that falls.
 
-\item Finally, I ran the kbbq software (see Chapter \ref{ch:kbbq}) with the specified genome size 605951511 and coverage 240 to recalibrate a set of reads sequenced from an individual of the non-model species \textit{Eucalyptus melliodora} \parencite{orr_phylogenomic_2020}. This dataset contains reads from 3 leaves each from 8 branches, each leaf sequenced to a depth of approximately 10X. I then called variants using HaplotypeCaller and filtered the calls using the same filters from \cite{orr_phylogenomic_2020}. At each filtering step, I recorded the number of sites where not all calls were identical for every leaf from the same branch; these I considered false positives. I also recorded the number of calls that were not present in the final set of variants identified in \cite{orr_phylogenomic_2020}; these I considered false negatives. I then compared these values with those found in \cite{orr_phylogenomic_2020}.
+% /storage/2017-03-15-eucalyptus/2020-09-28-kbbqflt
+\item Finally, I ran the kbbq software (see Chapter \ref{ch:kbbq}) with the specified genome size 605951511 and coverage 240 to recalibrate a set of reads sequenced from an individual of the non-model species \textit{Eucalyptus melliodora} \parencite{orr_phylogenomic_2020}. This dataset contains reads from 3 leaves each from 8 branches, each leaf sequenced to a depth of approximately 10X. I then called variants using HaplotypeCaller and filtered the calls using the same filters from \cite{orr_phylogenomic_2020}. At each filtering step, I took the approach described in Chapter \ref{ch:structured} to estimate the false discovery rate and false negative rate. Briefly, I created 100 random trees that were maximally distant from the true tree structure and filtered using these random trees instead of the true tree. Any variants that appeared in any of the randomized trees but not in the set of variants identified in \cite{orr_phylogenomic_2020}, I classified as false positives. To estimate the false negative rate, I counted the number of variants in the previously identified calls that were not found via the reference-free caller. I then compared these values to those found in \cite{orr_phylogenomic_2020}.
 
 \end{outline}
 
@@ -101,20 +111,12 @@
 \item To determine the impact of these variants on the overall quality of the callsets, I constructed heatmaps of the sensitivity and precision of each dataset (Figure \ref{fig:vc_sens_prech}). As the data become more well-calibrated, the sensitivity of the caller increases; however, the precision of the caller also increases. This means that the caller is able to detect more true variants, but a higher proportion of the calls it makes are false positives. To visualize the trade-off between sensitivity and precision, I plotted the precision against the sensitivity of each dataset, shown in Figure \ref{fig:vc_sens_prec}. To summarize the overall effect on accuracy, I show how the F-measure changes across each dataset in Figure \ref{fig:vc_f_heatmap}.
 \end{outline}
 
-
 \begin{figure}
 \centering
 \includetwo{sensitivity.pdf}{precision.pdf}
 \titlecaption{Unfiltered Sensitivity and Precision Heatmaps}{The sensitivity (left) and precision (right) of the variant caller on each dataset with no filtering. As the base quality score calibration of the input reads increases, the sensitivity of the caller increases and the precision decreases.}
 \label{fig:vc_sens_prech}
 \end{figure}
-
-% \begin{figure}
-% \centering
-% \includegraphics[width = .8\textwidth]{sens_precision.pdf}
-% \titlecaption{Sensitivity and Precision of Unfiltered Calls}{The sensitivity and precision of the variant caller on each dataset with no filtering. As the base quality score calibration of the input reads increases, the sensitivity of the caller increases but the precision of the caller decreases.}
-% \label{fig:vc_sens_prec}
-% \end{figure}
 
 \begin{figure}
 \centering
@@ -182,21 +184,62 @@
 %TODO: fix figure sizes and title line breaks. combine similar plots into 1 figure to make the whole chapter more readable
 %TODO: add in the raw, uncalibrated data and see where that falls.
 
+\subsection{Variants Detected With KBBQ Recalibrated Reads}
+
+In order to determine the effect of reference-free recalibration on variant calls, I recalibrated the reads with the reference-free base quality score recalibrator KBBQ (see Chapter \ref{ch:kbbq} for more information on KBBQ). I then called variants and filtered the same way they were called and filtered in \cite{orr_phylogenomic_2020}. The number of variants called at each step in the filtering process is shown in Table \ref{tbl:num_variants}. After filtering, 106 variants were detected; 34 of these were also detected in the confident set of variants previously identified. This previous set had a total of 90 variants. Filtering reduced the average number of false positive variants estimated to 35.54. Note that the number of detected sites listed in Table \ref{tbl:num_variants} are not all indicative of mutation, as the number includes heterozygous sites until the last filtering step.
+
+\begin{table}
+\begin{tabularx}{\textwidth}{l  l  l  l  l}
+\toprule
+\textbf{Filtering Step} & \textbf{Description} & \textbf{Number of Variants} & \textbf{Estimated False Positives} & \textbf{True Positives}\\
+\midrule
+1 & Appears in first 11 scaffolds & 9838408 & 911.46 & 88\\
+2 & Total depth <= 500 & 9190223 & 800.83 & 87\\
+3 & ExcessHet <= 40 & 4932628 & 144.95 & 86\\
+4 & Not within 50bp of an indel & 3175128 & 85.05 & 69\\
+5 & Biallelic SNPs & 1913594 & 68.88 & 67\\
+6 & Outside repeat regions & 857810 & 35.54 & 46\\
+7 & All 3 replicates match & 63793 & - & 35\\
+8 & Only variable sites & 106 & - & 34\\
+\bottomrule
+\end{tabularx}
+\titlecaption{Number of Detected Variants After KBBQ Recalibration}{The number of variants detected at each step in the filtering pipeline. Each row includes a description of each filter and the number of variants remaining after the filter has been applied. It also includes the number of false positives estimated by simulating 100 random, maximally distant trees, using those trees to filter the result at each step, and averaging the number of variants that survive filtering. Since step 7 includes filtering based on replicate agreement, this method cannot detect false positives for step 7 or 8; in the worst case, they are identical to the number of estimated false positives in step 6. True positives were estimated using the number of variants ultimately detected in the confident set described in \ref{orr_phylogenomic_2020}. This set contains a total of 90 variants.}
+\label{tbl:num_variants}
+\end{table}
+
 \section{Discussion}
 \begin{outline}
-%The simulated data here shows that quality scores do have a small but important effect on the quality of the called variants. This manifests itself in not only the difference in the number of true positive calls and the number of false positive calls, but also in the QUAL and GQ annotations.
-\item Overall, these results show that as the quality of the calibration increases, the quality of the variant calls also slightly increases. The difference is very small, but better calibration produces more positive calls, with more true positive calls than any other dataset. And though I only filtered the data with two fairly lenient filters, the best calibrations still produced the most true positive calls of any dataset. Interestingly, filtering seemed to amplify the difference between well-calibrated and uncalibrated data, increasing the disparity in the number of true positive variants detected.
+
+%todo: talk about F statistics
+%todo: discuss e mel results
+
+\item Overall, these results show that as the quality of the calibration increases, the quality of the variant calls also slightly increases. The difference is very small, but better calibration produces more positive calls, with more true positive calls than any other dataset. And though I only filtered the data with two fairly lenient filters, the best calibrations still produced the most true positive calls of any dataset.
+
+\item Interestingly, filtering seemed to amplify the difference between well-calibrated and poorly-calibrated data, increasing the disparity in the number of true positive variants detected. At the same time, filtering reduced the disparity in the number of false positive variants identified.
 
 %Talk about how filtering becomes very important for leveraging the power of calibration
-\item asdaf
+\item This observation makes filtering very important for variant calling. Variant callers will generally prefer to include a putative variant rather than exclude it and miss a truly variant site. Thus, they prefer sensitivity over precision. The reason for this preference can be seen in Figure \ref{fig:vc_sens_prec}, where filtering reduced the sensitivity of every set of calls but greatly improved precision and decreased the range of precision values. Filtering raw calls is paramount to getting a variant set with acceptable levels of sensitivity and precision. Ultimately, the impact of base quality score recalibration is not going to be as large as the filters one chooses to use. In this case, better calibration results in an increased precision of \~.003 before filtering; filtering itself increased precision by about .08, while reducing sensitivity by approximately .18. So the effect of calibration on sensitivity and precision is small in comparison. At the same time, if the variant that matters for the purposes of the study being conducted, this difference in calibration could be important.
 
-%At the same time, the size of the effect is small. While effective recalibration will certainly benefit variant calling, even somewhat large errors in the input variable sites will not significantly hurt the performance of HaplotypeCaller.
+\item Unfortunately, this means that filtering plays a big role in the success of a variant calling pipeline. While there is no definitive best way to filter variants in all cases, Figure \ref{fig:vc_rocs} shows that differences in quality score calibration can affect the annotations attached to each call and make the same filters more or less effective, depending on the threshold used. While this is interesting, it doesn't necessarily change how filtering should be done or suggest an optimal filtering strategy.
 
-\item Variant filtering is a common and important step in the variant calling process; variant callers are usually tuned to be very sensitive but not very specific, so most people will do some type of filtering on the output. The most common filter is a depth filter, so I filtered on depths that are unexpectedly large or small. These may signify alignment errors or some other type of oddity that makes the calls less trustworthy.
-
+\item One limitation of this study is that is uses only a single dataset and only a sparce range of false positives and false negatives in the database of variable sites. Especially since the effect of calibration on the output variant calls is small, a different dataset may yield different results. As seen in Chapter \ref{ch:kbbq}, the calibration of the raw reads in this dataset is not particularly bad. Furthermore, this data is from a human-derived cell line, and protocols for DNA extraction and sequencing are fairly well-established. Additionally, the original base calling algorithm is likely tuned to work well with human-like data. All together, this means that while the effect of recalibration was not particularly pronounced in this dataset, base quality score recalibration may have a higher impact on data that is messier, contains more errors induced in sample preparation, or results from failed sequencing runs. Replication with other datasets and other variant callers is necessary to further elucidate the role of base quality score calibration on variant caller performance.  
 %Talk about how BQSR actually made everything worse!!!
 
 %Speculate about when BQSR might actually be useful!! More work is needeD!!!
+
+% Surprisingly, the behavior of the raw dataset is most similar to that of KBBQ and the dataset calibrated with perfect information. At the same time, the patterns observed clearly indicate an effect of calibration on how HaplotypeCaller functions. This can be explained in a few ways; 1) GATK's own calibration method is flawed, and the raw data is truly the best calibrated data, so the trends are real. 2) this dataset is just weird 3) the calibration is actually correct and calibration affects HC in a roundabout way that doesn't directly translate into better calls. The trends are an artifact of that process.
+
+\subsection{KBBQ Recalibration Improved \textit{E. melliodora} Calls}
+
+\item While the simulated datasets revealed a complex interaction between the number of detected variants, sensitivity, precision, and filtering, it appears KBBQ recalibration improved the ability to successfully call variants in a non-model organism. In Chapter \ref{ch:kbbq}, I showed that using GATK's recommended approach of calling confident variants and using those as the set of variable sites to use in recalibration results in poor base quality score calibration. I also showed that using the KBBQ method improved calibration to near-perfect GATK recalibrations. The calls on the simulated datasets shown here also imply that KBBQ recalibrated reads behave similarly to or better than reads recalibrated with GATK using perfect information.
+
+\item Using the same calling and filtering parameters as those used in \cite{orr_phylogenomic_2020} yielded more variants at the end of filtering with 106 instead of 99. This is consistent with the results from the simulated datasets, where better-calibrated data yields more variant calls. Indeed, this is the case even before other filters are applied, with 9,838,408 variants detected versus 9,679,544 detected in the prior study. Additionally, the number of variants after filtering that appear in the confident set identified in the previous study increased from 30 to 34. However, in contrast to the results from the simulated data, the number of estimated false positive calls decreased as well in the KBBQ recalibrated data, falling from 55.71 to 35.54 after filtering and from 1033.18 to 911.46 before filtering. Thus, using KBBQ to recalibrate the reads before calling seems to have increased both the sensitivity and the precision of the variant calling pipeline.
+
+\item After all filters were applied, the pipeline yielded 106 mutations with an estimated 36 false positives and 34 previously-estimated true positives. This leaves approximately 36 positive variants that were not in the set of previously identified variants. This is an approximately 2.8 times increase from that same estimate of 13 inferred with the calls from \ref{orr_phylogenomic_2020}. While this is an estimate based on the false positive rate and so cannot be used to distinguish between previously unidentified true variants and false positives, it shows how the decrease in false positive rate from using KBBQ recalibrated reads improves the overall ability of the variant calling pipeline to reveal true mutations.
+
+% Why might the empirical results differ from the simulated ones?
+
+% TODO: run the pipeline on the raw reads and see what the difference is (ie not use GATK calibration)
 
 \end{outline}
 

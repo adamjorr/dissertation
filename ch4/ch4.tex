@@ -94,7 +94,7 @@ Crucially, these methods require a reference and possibly other information to r
 
 % kbbq
 Here we present \texttt{kbbq}, a software package to recalibrate quality scores of whole genome sequencing data without a reference or database of variable sites. The only required input is the set of reads to be recalibrated. Rather than excluding variation and comparing to the reference like GATK does, \texttt{kbbq} uses k-mer subsampling to find likely errors. Once the number of errors and nonerrors are counted and categorized according to their covariates, it uses the same model GATK uses to recalibrate the reads. I show how simulated false negatives and false positives affect GATK's ability to recalibrate reads and compare GATK calibration to \texttt{kbbq}.
-\section{Materials and Methods}
+\section{Methods}
 	% \item Error correction algorithms
 \texttt{kbbq} performs BQSR by adjusting how errors in the dataset are discovered.
 Instead of looking at the reference, \texttt{kbbq} implements the error-correction algorithm described in \cite{song_lighter_2014} and uses the errors detected by that procedure to train and apply the standard GATK model. Note that the sequenced bases are not actually changed; the detected errors are used only to train the model. If there is evidence according to the model that the base is erroneous, its base quality will be decreased according to the strength of that evidence.

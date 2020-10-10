@@ -65,3 +65,42 @@
 	date = {2020-03-11},
 	file = {Full Text PDF:/home/adam/Zotero/storage/YSAHVGXD/Orr et al. - 2020 - A phylogenomic approach reveals a low somatic muta.pdf:application/pdf;Snapshot:/home/adam/Zotero/storage/UAV3PBLQ/rspb.2019.html:text/html}
 }
+
+
+@article{ni_improvement_2016,
+	title = {Improvement in detection of minor alleles in next generation sequencing by base quality recalibration},
+	volume = {17},
+	issn = {1471-2164},
+	doi = {10.1186/s12864-016-2463-2},
+	abstract = {{BACKGROUND}: Minor allele detection in very high coverage sequence data ({\textgreater}1000X) has many applications such as detecting {mtDNA} heteroplasmy, somatic mutations in cancer or tumors, {SNP} calling in pool sequencing, etc., where reads with low frequency are not necessarily sequence error but may instead convey biological information. However, the suitability of common base quality recalibration tools for such applications has not been investigated in detail.
+{RESULTS}: We show that the widely used tool {GATK} {BaseRecalibration} has several limitations in minor allele detection. First, {GATK} {IndelRealignment} fails to work if the sequence coverage is above a certain level since it then becomes computationally infeasible. Second, the accuracy of the base quality largely depends on the database of known {SNPs} as the control, which limits the ability of de novo minor allele detection. Third, {GATK} reduces the base quality of sequence errors at the cost of reducing scores for true minor alleles. To overcome these limitations, we present a novel approach called {SEGREG}, which applies segmented regression to control sequences (e.g. {phiX}174 {DNA}) spiked into a sequencing run. Based on simulations {SEGREG} improves both the accuracy of base quality scores and the detection of minor alleles. We further investigate sequence error and recalibration parameters by applying a Logarithm Likelihood Ratio ({LLR}) approach to {SEGREG} recalibrated base quality scores for {phiX}174 {DNA} sequenced to very high coverage, and for {mtDNA} genome sequences previously analyzed for heteroplasmic variants.
+{CONCLUSIONS}: Our results suggest that {SEGREG} improves base recalibration without suffering the limitations discussed above, and the {LLR} approach benefits from {SEGREG} in identifying more true minor alleles, while avoiding false positives from sequencing error.},
+	pages = {139},
+	journaltitle = {{BMC} genomics},
+	shortjournal = {{BMC} Genomics},
+	author = {Ni, Shengyu and Stoneking, Mark},
+	date = {2016-02-27},
+	pmid = {26920804},
+	pmcid = {PMC4769523},
+	keywords = {Humans, Alleles, Calibration, Computer Simulation, {DNA}, Mitochondrial, Gene Frequency, Genome, Mitochondrial, High-Throughput Nucleotide Sequencing, Likelihood Functions, Polymorphism, Single Nucleotide, Sequence Analysis, {DNA}, Viral Proteins},
+	file = {Full Text:/home/adam/Zotero/storage/B94KF9G3/Ni and Stoneking - 2016 - Improvement in detection of minor alleles in next .pdf:application/pdf}
+}
+
+
+@article{li_improving_2011,
+	title = {Improving {SNP} discovery by base alignment quality},
+	volume = {27},
+	issn = {1367-4803},
+	url = {https://academic.oup.com/bioinformatics/article/27/8/1157/227268},
+	doi = {10.1093/bioinformatics/btr076},
+	abstract = {Abstract.  Summary: I propose a new application of profile Hidden Markov Models in the area of {SNP} discovery from resequencing data, to greatly reduce false {SNP}},
+	pages = {1157--1158},
+	number = {8},
+	journaltitle = {Bioinformatics},
+	shortjournal = {Bioinformatics},
+	author = {Li, Heng},
+	urldate = {2020-09-09},
+	date = {2011-04-15},
+	langid = {english},
+	file = {Full Text PDF:/home/adam/Zotero/storage/8SB5ILL2/Li - 2011 - Improving SNP discovery by base alignment quality.pdf:application/pdf;Snapshot:/home/adam/Zotero/storage/XG6W8ZJ6/227268.html:text/html}
+}

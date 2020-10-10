@@ -1,4 +1,26 @@
 \chapter{Introduction}
-\section{Section1}
 
-A brief introduction that introduces topics like DNA sequencing and variant calling. Also introduces the \textit{E. melliodora} dataset used in the 2nd, 3rd, and 5th chapters.
+%A brief introduction that introduces topics like DNA sequencing and variant calling. Also introduces the \textit{E. melliodora} dataset used in the 2nd, 3rd, and 5th chapters.
+
+%TODO: MANY CITES ! These things are all gonna need citations.
+%TODO: maybe more background info?
+
+Next-generation sequencing is a powerful technology with numerous applications. It has enabled data collection and hypothesis testing at an unprecedented scale. It serves as the basis of hundreds of assays for interrogating a wide array of molecular functions and epigenetic states. As a testament to how powerful and useful the technology is for understanding the natural world, it has achieved such widespread usage despite being highly error-prone. DNA sequencing technology continues to improve; advances in increasing read length and reduced substitution, insertion, and deletion errors are inevitable as the technology is refined. Yet even the most sophisticated and accurate sequencing platforms will require analysis with sound statistical methods to turn raw data into interesting and useful insights about the natural world.
+
+In this dissertation, I explore and develop methods for gaining insight from noisy next-generation sequencing data in challenging contexts. In particular, I focus on genotyping and detecting mutations in non-model organisms. While there has been a deluge in sequencing data generated since the advent of the technology, most organisms on the planet have still not been sequenced. Yet, the amount of funding available for the generation and refinement of new reference genomes and associated annotations is dwindling. Model organisms are immensely useful for generating knowledge and are vital to gaining understanding of the world. However, it is clear that model organisms do not hold all the answers. As such, it is important and necessary to develop methods for data analysis that work well even with limited \textit{a priori} knowledge.
+
+In the second chapter, I present collaborative work on sensitively detecting somatic mutations in the non-model eucalypt, \textit{Eucalyptus melliodora}. This work was previously published in \textit{Proceedings of the Royal Society B} and documents my and my coauthors' efforts to estimate the somatic mutation rate of an individual eucalypt. As a control, I used a conventional variant calling algorithm paired with custom filters to investigate whether the physical tree structure of the organism also gives it a tree-like genetic structure, as one may predict based on how trees grow and mature. I also interrogate the limits of this approach and find bounds on the estimates of several population genetic parameters we are able to estimate from the data.
+
+The sequencing data used in my second chapter is used throughout this dissertation and serves as a basis of comparison for many of the techniques I use.
+I continue investigating methods for genotyping this data in the third chapter, where I use a non-reference variant caller to detect mutations in the data and compare the results of this method to my previously published estimates. While such methods have historically been slow and inaccurate, they have the potential to be an important tool for surveying genetic variation in a wide variety of non-model organisms.
+
+The fourth chapter details my investigation of base quality score recalibration, a technique used to fix inaccurate quality measurements attached to sequencing data. I introduce an efficient software program \texttt{kbbq} to perform base quality score recalibration on whole genome sequencing reads without a reference genome or other \textit{a priori} knowledge and show it performs just as well as the most common method for base quality score recalibration.
+
+Since errors are common in sequencing data and correlated errors cannot be fixed by more sequencing, correcting quality score calibration issues in sequencing reads could in principle improve the ability of a variant caller to distinguish between true variation and noise. However, whether this assertion holds true is unknown and subject to debate. While it has long been a part of the GATK Best Practices pipeline, it has recently fallen out of favor. In the fifth chapter, I investigate the effect of base quality score recalibration on variant caller accuracy.
+
+%TODO: make this not suck
+All together, this work explores many avenues for detecting variants in non-model organisms. 
+There are many ways to do so, and many more that aren't discussed here.
+Each has strengths and weaknesses, but understanding what these are is critical to success.
+While chosing the correct method can be a challenging and daunting task, with careful preparation and rigorous examination of the available methods, any researcher can achieve satisfactory results.
+
