@@ -21,9 +21,12 @@
 \usepackage{multirow}
 \usepackage{minted}
 \usepackage{textcase}
-\addbibresource{ch4/citations.bib}	
-\addbibresource{ch5/ch5.bib}
-
+\addglobalbib{ch1/ch1.bib}
+\addglobalbib{ch2/ch2.bib}
+\addglobalbib{ch3/ch3.bib}
+\addglobalbib{ch4/ch4.bib}	
+\addglobalbib{ch5/ch5.bib}
+\addglobalbib{ch6/ch6.bib}
 
 \newcommand{\titlecaption}[2]{\caption[#1]{\textbf{#1 \textbar\,} #2}}
 \newcommand{\protectedref}[1]{\ref{#1}}
@@ -80,7 +83,7 @@
 % This gets the headers for the LOF right on the first page.  Subsequent pages
 % are handled by the fancyhdr code in the asudis.sty file.
 
-\graphicspath{{ch4/figures/}{ch5/figures/}{ch3/figures/}}
+\graphicspath{{ch2/figures/}{ch3/figures/}{ch4/figures/}{ch5/figures/}}
 
 %-----------------------body
 \doublespace
