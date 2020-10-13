@@ -3,8 +3,8 @@
 \section{Introduction}
 
 Next generation sequencing has a plethora of applications in biology. %TODO: give some examples
-While the technology is widely applied, current technology is inherently erroneous and errors are common in sequencing data, with base substitution error rate estimates ranging between $.1$ and $1\%$, depending on the sequencing technology used. %TODO: cite
-To help mitigate this, DNA molecules are usually copied and sequenced multiple times to ensure the sequence is correct, since multiple independent measurements are unlikely to all contain the same error at the same position. While this works well in general, it can be costly and additional sample manipulation can damage samples and insert mutations, further increasing the amount of technical error in the data. %TODO: cite
+While the technology is widely applied, the sequencing process is inherently erroneous and errors are common in sequencing data, with base substitution error rate estimates ranging between $.1$ and $1\%$, depending on the sequencing technology used \parencite{fox_accuracy_2014}.
+To help mitigate this, DNA molecules are usually copied and sequenced multiple times to ensure the sequence is correct, since multiple independent measurements are unlikely to all contain the same error at the same position. While this works well in general, it can be costly and additional sample manipulation can damage samples and insert mutations, further increasing the amount of technical error in the data \parencite{schirmer_insight_2015, ma_analysis_2019}.
 
 \subsection{Quality Scores}
 
@@ -21,7 +21,7 @@ Since the quality score is an exactly defined probability, it is straightforward
 
 %new paragraph - binning
 If so desired, quantitative scores can be collapsed into coarser categories, such as "good" and "bad". This is sometimes done as a heuristic; \textit{ie.} scores less than 10 are untrustworthy and filtered out of a dataset and other scores are trusted and retained.
-The practice of binning quality scores together with neighboring scores is commonly performed to reduce file size. %TODO: cite. there is an Illumina paper about this.
+The practice of binning quality scores together with neighboring scores is commonly performed to reduce file size \parencite{shibuya_better_2019, malysa_qvz_2015, yu_quality_2015, noauthor_reducing_2014}. 
 However, it's important to note that this process cannot be simply reversed as information is lost when the scores are binned.
 
 \subsection{Base Quality Score Recalibration}
@@ -29,24 +29,26 @@ However, it's important to note that this process cannot be simply reversed as i
 % What is Base Quality Score Recalibration?
 While base quality scores are important for identifying reliable data, base quality scores are often incorrect.
 Base quality scores are exactly defined as a probability. They can be interpreted as a prediction giving the probability the reported base is an error. In general, probabilities are called \textit{calibrated} if the reported probability accurately predicts the frequency of an event.
-Base quality scores in Illumina sequencing reads are not well-calibrated \parencite{callahan_dada2:_2016}. %(TODO: more cites)
-A few alternative base calling models have been developed for Illumina machines that improve base call accuracy and quality score calibration; however, these are difficult to use because they require the raw output from the sequencing machine, which is unavailable to most users of sequencing as they are usually disposed of after a sequencing run due to the large cost associated with storing that data. %TODO: cite
-%New para
+Base quality scores in Illumina sequencing reads are not well-calibrated \parencite{callahan_dada2:_2016, ni_improvement_2016}. %(TODO: more cites)
+A few alternative base calling models have been developed for Illumina machines that improve base call accuracy and quality score calibration; however, these are difficult to use because they require the raw output from the sequencing machine, which is unavailable to most users of sequencing as they are usually disposed of after a sequencing run due to the large cost associated with storing that data \parencite{kao_naivebayescall_2011, massingham_all_2012}. 
+
+
 Since base quality scores are used to some degree by most variant calling methods, it is probable that poorly calibrated reads reduce the quality of resulting variant calls.
 Similarly, the reduced amount of information in binned quality scores may also impact the quality of variant calls made using the data.
 Poor calibration combined with poor resolution resulting from quality score binning may have an important impact on algorithms that rely on these scores to function, but the exact affect of these phenomena are unknown.
-% new paragraph - actual BQSR
-Though increased sequencing depth can help mitigate the impact of random sequencing errors, sequencing is affected by non-random biases. %todo: cite
+
+%actual BQSR
+Though increased sequencing depth can help mitigate the impact of random sequencing errors, sequencing is affected by non-random biases.
 For these types of errors, increasing sequencing depth counterintuitively \textit{increases} the effect of these errors, as they by definition occur preferentially at the same location. Thus, increased sequencing depth at that location adds more errors than are expected by chance, making those erroneous reads seem trustworthy. 
-These biases can be due to the nature of the DNA sequence itself, with errors induced during library preparation or the sequencing reaction likely due to secondary structure \parencite{meacham_identification_2011, nakamura_sequence-specific_2011}.
-At the same time, the sequencing reaction is also non-randomly biased. Bases at the end of a read are much more likely to be erroneous than bases at the beginning of the read, and the identity of the base and adjacent bases also affect the error rate. %todo: cite
-Thus while random errors are troublesome, their impacts can be somewhat mitigated by more sequencing. Systematic errors cannot addressed in the same way, but they can be modeled.
+These biases can be due to the nature of the DNA sequence itself, with errors induced during library preparation or the sequencing reaction likely due to secondary structure \parencite{meacham_identification_2011, nakamura_sequence-specific_2011, schirmer_insight_2015, ma_analysis_2019}.
+At the same time, the sequencing reaction is also non-randomly biased. Bases at the end of a read are much more likely to be erroneous than bases at the beginning of the read, and the identity of the base and adjacent bases also affect the error rate \parencite{fox_accuracy_2014, schirmer_illumina_2016}. 
+Thus while random errors are troublesome, their impacts can be somewhat mitigated by more sequencing. Systematic errors cannot addressed in the same way, but they can be modeled and incorporated into quality scores.
 %discuss non-random genomic locus vs. sequencing characteristics etc.    %non-random errors
 
 % GATK BQSR occurs in 3 phases.
 % Phase 1 - Count errors and covariates
 Base quality score recalibration (BQSR) is the process of modeling errors in sequencing data and using the created model to update quality scores such that they reflect an accurate probability of error of any base.
-GATK BQSR  is the most popular method for BQSR and is recommended before variant calling by the GATK best practices. %todo cite
+GATK BQSR  is the most popular method for BQSR and is recommended before variant calling by the GATK best practices \parencite{auwera_fastq_2013}.
 The model integrates many covariates of error such that the output quality score reflects an accurate, independent measure of the probability of error.
 The algorithm takes reads aligned to a reference and a database of potentially variable sites in the genome as input.
 
@@ -69,7 +71,7 @@ In the third phase, the quality score of each read is adjusted based on the four
 
 % How much does BQSR help?
 BQSR improves quality score calibration in many cases, especially when there is moderate sequencing depth and the database of variable sites is nearly complete. %todo : cite
-While BQSR is recommended in GATK's Best Practices, its affect on the resulting variant calls is not well-characterized, and there is ongoing debate about whether to continue recommending BQSR. \parencite{van_der_auwera_geraldine_2020} %todo: more cites
+While BQSR is recommended in GATK's Best Practices, its affect on the resulting variant calls is not well-characterized, and there is ongoing debate about whether to continue recommending BQSR. \parencite{van_der_auwera_geraldine_2020, van_der_auwera_geraldine_2020_b}
 However, \cite{ni_improvement_2016} find that improved quality score calibration aids detection of minor alleles in high coverage datasets by increasing sensitivity and reducing the number of false positive calls.
 Thus, the need to perform BQSR and the performance of GATK's BQSR algorithm may vary from study to study.
 One objective of this work is to help elucidate when GATK BQSR performs well and when it fails, and provide a method that works in situations that GATK BQSR struggles with.
@@ -77,23 +79,23 @@ As an example, the GATK developers recommend BQSR for use in cancer variant disc
 
 \subsection{Alternative Approaches for BQSR}
 % What is the problem with current methods for BQSR?
-As illustrated above, the most problematic aspect of GATK BQSR occurs in the first phase of the algorithm: counting erroneous and non-erroneous bases. This is especially true when considering non-model organisms, where alignment errors may be common. Furthermore, in non-model organisms a database of variable sites is likely unavailable or largely incomplete. However, there are methods that attempt to overcome this deficiency. While there exist alternative approaches that implement different error models, such as Lacer \parencite{chung_lacer:_2017}, the biggest problem for analyzing data without reliable reference information is the method of counting erroneous and non-erroneous bases.
+As illustrated above, the most problematic aspect of GATK BQSR occurs in the first phase of the algorithm: counting erroneous and non-erroneous bases. This is especially true when considering non-model organisms, where alignment errors may be common. Furthermore, in non-model organisms a database of variable sites is likely unavailable or largely incomplete. However, there are methods that attempt to overcome this deficiency. While there exist alternative approaches that implement different error models such as Lacer \parencite{chung_lacer:_2017}, the biggest problem for analyzing data without reliable reference information is the method of counting erroneous and non-erroneous bases.
 % \item In a variant calling context, BQSR is probably most helpful in regions with low coverage, as the limited amount of data makes it difficult to differentiate between errors, heterozygous sites, and mutations.
  % or inconsistent coverage, as one may expect when sequencing a non-model organism; however, by definition that means no quality reference nor database of variable sites are available. Since these are required to perform GATK's BQSR, that means BQSR cannot be confidently completed.
 % \item Find some estimates of differences between reference and samples sequenced; perhaps look at mouse
 % \item This will be highly species-dependent and situation specific
 
 % Alternative Approaches
-Many alternative algorithms have been developed to avoid providing a database of variable sites. However, these approaches all still require a reference and alignment, and many require extra reagents and sequencing that increases the cost of analysis and cannot be used to reanalyze existing sequencing data that hasn't been specially prepared.
+Many alternative algorithms have been developed to avoid providing a database of variable sites. However, these approaches all still require a reference and alignment, and many require extra reagents and sequencing spike-ins that increase the cost of analysis and cannot be used to reanalyze existing sequencing data that hasn't been specially prepared.
 % \item Lacer \parencite{chung_lacer:_2017} bins aligned bases based on depth and whether the base matches the reference, then uses singular value decomposition to infer the shift in quality score for each base.
 ReQON \parencite{cabanski_reqon:_2012}, like GATK, considers bases that do not match the reference as errors but limits the number of acceptable errors at a position to minimize the effect of unknown variants. It then uses a logistic regression to recalibrate the quality scores.
 SOAP2 \parencite{li_soap2:_2009} contains a model for consensus sequence construction that performs BQSR during construction. %It doesn't seem possible to get these recalibrated scores out??
-The methods of \cite{zook_synthetic_2012} and \cite{ni_improvement_2016} use synthetic spike-ins of known composition and GATK's model \cite{zook_synthetic_2012} or piecewise regression \parencite{ni_improvement_2016} to recalibrate quality scores. Since the sequence of the spike-in is known before hand, errors are easy to identify as there should be no biological variation in the spiked-in sample.
+The methods of \cite{zook_synthetic_2012} and \cite{ni_improvement_2016} use synthetic spike-ins of known composition and GATK's model \parencite{zook_synthetic_2012} or piecewise regression \parencite{ni_improvement_2016} to recalibrate quality scores. Since the sequence of the spike-in is known before hand, errors are easy to identify as there should be no biological variation in the spiked-in sample.
 % \item While these approaches are useful alternatives to GATK, the comparisons presented here will only compare against GATK BQSR as none of the alternative approaches function without a reference and GATK BQSR is the most popular method.
 Crucially, these methods require a reference and possibly other information to recalibrate reads that may not be available.
 
 % kbbq
-Here we present \texttt{kbbq}, a software package to recalibrate quality scores of whole genome sequencing data without a reference or database of variable sites. The only required input is the set of reads to be recalibrated. Rather than excluding variation and comparing to the reference like GATK does, \texttt{kbbq} uses k-mer subsampling to find likely errors. Once the number of errors and nonerrors are counted and categorized according to their covariates, it uses the same model GATK uses to recalibrate the reads. I show how simulated false negatives and false positives affect GATK's ability to recalibrate reads and compare GATK calibration to \texttt{kbbq}.
+To effectively recalibrate base quality scores with as little auxiliary information as possible, I present \texttt{kbbq}, a software package to recalibrate quality scores of whole genome sequencing data without a reference or database of variable sites. The only required input is the set of reads to be recalibrated. Rather than excluding variation and comparing to the reference like GATK does, \texttt{kbbq} uses k-mer subsampling to find likely errors. Once the number of errors and nonerrors are counted and categorized according to their covariates, it uses the same model GATK uses to recalibrate the reads. I show how simulated false negatives and false positives affect GATK's ability to recalibrate reads and compare GATK calibration to \texttt{kbbq}.
 \section{Methods}
 	% \item Error correction algorithms
 \texttt{kbbq} performs BQSR by adjusting how errors in the dataset are discovered.
@@ -166,7 +168,7 @@ In order to determine how misspecification of the database of variable sites aff
 %new paragraph
 
 % GATK method test
-To simulate a situation where a researcher has sequenced a non-model organism, is using a reference that may not closely match the sample, and doesn't have a database of variable sites, I aligned the test data to the chimp reference genome \parencite{waterson_initial_2005} usign NextGenMap \parencite{sedlazeck_nextgenmap_2013}. %todo: using aligner X, more info and a cite for this
+To simulate a situation where a researcher has sequenced a non-model organism, is using a reference that may not closely match the sample, and doesn't have a database of variable sites, I aligned the test data to the chimp reference genome \parencite{waterson_initial_2005} using NextGenMap \parencite{sedlazeck_nextgenmap_2013}.
 In this situation, GATK recommends calling an initial set variants with high confidence and using these variants as the database of variable sites. %todo: give GATK parameters, etc used.
 
 To see how this affects the results of GATK's BQSR, I did so using HaplotypeCaller with the \texttt{-stand-call-conf 50} argument. The default value for this argument is 40, and is a phred-scaled confidence threshold for reporting a variant. I then used the resulting variants with BaseRecalibrator to train a recalibration model. To evaluate this model using the truth set, I used the model to recalibrate the reads as they were aligned to the human reference. Thus, the sole difference between this recalibration method and the standard using the correct reference and database of variable sites is the trained model; the realignment has no impact on benchmarking the calibration. I then used AnalyzeCovariates as above to obtain the calibration data.
@@ -319,6 +321,6 @@ As the chimp-aligned calibration shows, GATK BQSR struggles on real data from no
 
 Base quality score recalibration is an important procedure to ensure base quality scores are accurate before variant calling. However, the most popular method for doing BQSR is not easy to do if the sequenced organism is a non-model organism. I simulated sets of variable sites with varying false positive and false negative rates to use with BQSR. While it seems the simulated false positives are somewhat different from those that appear in real datasets, it is clear that false negatives severely reduce the quality of the calibration using GATK's method. I developed the software tool \texttt{kbbq} to recalibrate base quality scores without a reference or database of variable sites to overcome these deficiencies. Since it doesn't use a database of variable sites or a reference, the quality of these resources is immaterial to the quality of the resulting calibration. Finally, I emulated GATK's procedure for calibration when a database of variable sites is unavailable by aligning benchmark data to the chimp genome and calling variants to use as the database of variable sites. This method produces a calibration much worse than \texttt{kbbq}. Thus, when a database of variable sites or reference is unavailable or of poor quality, \texttt{kbbq} is an effective method for base quality score recalibration.
 
-\printbibliography{}
+\printbibliography[segment=\therefsegment]{}
 
 	% \item Future work: see how big the difference is in variant calls using binned quality scores, miscalibrated reads, and well calibrated reads.

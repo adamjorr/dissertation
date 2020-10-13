@@ -1,7 +1,7 @@
 
 \documentclass[12pt,letterpaper]{report}
 % \usepackage{natbib}
-\usepackage[style=nature, citestyle=authoryear, refsection=chapter]{biblatex}
+\usepackage[style=nature, citestyle=authoryear, refsegment=chapter]{biblatex}
 \usepackage{geometry}
 %\usepackage{fancyheadings} fancyheadings is obsolete: replaced by fancyhdr. JL
 \usepackage{fancyhdr}
@@ -12,6 +12,7 @@
 \usepackage{tocloft}
 \usepackage{asudis}
 %adam's packages
+% \usepackage{hyperref}
 \usepackage{url}
 \usepackage{graphicx}
 \usepackage{tikz}
@@ -27,6 +28,8 @@
 \addglobalbib{ch4/ch4.bib}	
 \addglobalbib{ch5/ch5.bib}
 \addglobalbib{ch6/ch6.bib}
+\setcounter{biburlnumpenalty}{9000}
+\setcounter{biburlucpenalty}{9100}
 
 \newcommand{\titlecaption}[2]{\caption[#1]{\textbf{#1 \textbar\,} #2}}
 \newcommand{\protectedref}[1]{\ref{#1}}
@@ -103,9 +106,9 @@
 % \bibliographystyle{asudis}
 %\bibliography{dis}
 
-\printbibliography[title=References]{}
+\printbibliography{}
 % \printbibheading[title=References]{}
-% \bibbysegment[heading=none]{}
+% \bibbysection{}
 }
 \renewcommand{\chaptername}{APPENDIX}
 \addtocontents{toc}{APPENDIX \par}
