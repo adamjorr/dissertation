@@ -21,7 +21,7 @@ To obtain variants to compare to the variant set obtained in \cite{orr_phylogeno
 
 DiscoSNP++ was chosen as the reference-free caller to use because it was the only one that was able to be successfully installed and run on the system I used to analyze the data. Cortex \parencite{iqbal_novo_2012} uses a custom installation script that failed to properly compile the program; it could not successfully link the submodules Cortex uses. Installation of Kestrel \parencite{audano_mapping-free_2018} was standardized and simple, but required too much memory for this dataset. It was run with the default 4G of memory, 8G, 64G, and 256G, but crashed each time, complaining of insufficient memory. The manual gives no advice for setting this parameter. eBWT2SNP \parencite{prezza_snps_2019} was not used as it requires installation of a handful of dependencies and it outputs only FASTA files rather than VCF files.
 
-To understand how each filtering step previously applied to this data affected the number of variants in this set, I applied 7 of 8 of these filters to the set of variants. Prior to these filters, however, I used BCFTools \parencite{li_statistical_2011} to remove any site which included a "." genotype, since every sample is diploid; "./." genotypes were permitted until the second to last step. The first filter only permits variants that appear on the first 11 scaffolds of the genome; these represent the chromosomes of \textit{E. melliodora}. Variants with depth > 500 were then excluded, as higher than expected depth is a signal of alignment problems. The ExcessHet annotation could not be used for filtering, as this filter is specific to GATK. I then filtered out variants within 50bp of an indel, another indicator of alignment issues. I then removed any variant that was not a biallelic SNP, as these are more likely to be errors than true mutations. Note that this makes it impossible for this pipeline to detect heterozygous to heterozygous mutations. I then removed variants that were in repetitive regions determined by a liftover of the \textit{E. grandis} RepeatMasker annotation \parencite{bartholome_high-resolution_2015} to the pseudo-reference. Finally, I removed all sites where any set of three replicates did not have the same genotype. I then included only sites that included a mutation (\textit{ie.} not all heterozygous) to get the final set of variants.
+To understand how each filtering step previously applied to this data affected the number of variants in this set, I applied 7 of 8 of these filters to the set of variants. Prior to these filters, however, I used BCFTools \parencite{li_statistical_2011} to remove any site which included a ``." genotype, since every sample is diploid; ``./." genotypes were permitted until the second to last step. The first filter only permits variants that appear on the first 11 scaffolds of the genome; these represent the chromosomes of \textit{E. melliodora}. Variants with depth > 500 were then excluded, as higher than expected depth is a signal of alignment problems. The ExcessHet annotation could not be used for filtering, as this filter is specific to GATK. I then filtered out variants within 50bp of an indel, another indicator of alignment issues. I then removed any variant that was not a biallelic SNP, as these are more likely to be errors than true mutations. Note that this makes it impossible for this pipeline to detect heterozygous to heterozygous mutations. I then removed variants that were in repetitive regions determined by a liftover of the \textit{E. grandis} RepeatMasker annotation \parencite{bartholome_high-resolution_2015} to the pseudo-reference. Finally, I removed all sites where any set of three replicates did not have the same genotype. I then included only sites that included a mutation (\textit{ie.} not all heterozygous) to get the final set of variants.
 
 To visualize how each filtering step affected the overall quality of the called variants, I concatenated the variants found in each step to create a FASTA alignment of sites and used RAxML \parencite{stamatakis_raxml_2014} with the -f a option to search for the best-scoring maximum likelihood tree, the -m ASC\_GTRGAMMA model to use a GTR mixture model with gamma distributed rate heterogeneity and correct for ascertainment bias, and the -\phantom{}-asc-corr lewis option to use Lewis' correction for ascertainment bias \parencite{lewis_likelihood_2001}. Variant concatenation is not the optimal way to infer accurate phylogenies; however, for the purposes of a visual summary of the data it is sufficient. Trees were visualized in R \parencite{r_core_2020} with the ape package \parencite{paradis_ape_2019}.
 
@@ -30,6 +30,7 @@ To evaluate the performance of this pipeline, I estimated the number of false po
 
 True positives are difficult to estimate, and the structure of the data does little to assist in identifying true variants. I therefore use the confident set of mutation calls made in \cite{orr_phylogenomic_2020} and treat them as the set of true positives. Any calls that overlap this set are therefore classified as true positives, and the number of calls that are not present in the set are classified as false negatives. Note that, as found in \cite{orr_phylogenomic_2020}, this set has an approximate false negative rate of 30\%, so it's possible that true mutations are not classified as such under this classification scheme.
 
+Scripts to reproduce these analyses are available in Appendix \ref{ch:evaluating_code}.
 
 \section{Results}
 
@@ -38,8 +39,7 @@ DiscoSnp++ emitted a total of of 1,114,434 potential variants; however, only 951
 \begin{table}
 \begin{tabularx}{\textwidth}{>{\hsize=1.5\hsize\linewidth=\hsize}X >{\hsize=.7\hsize\linewidth=\hsize}X >{\hsize=.9\hsize\linewidth=\hsize}X >{\hsize=.9\hsize\linewidth=\hsize}X}
 \toprule
-\textbf{Description} & \textbf{Num} & \textbf{Estimated} & \textbf{True}\\
-& \textbf{Variants} & \textbf{False Positives} & \textbf{Positives} \\
+\textbf{Description} & \textbf{Num \newline Variants} & \textbf{Estimated \newline False Positives} & \textbf{True \newline Positives}\\
 \midrule
 Appears in first 11 scaffolds & 951924 & 14.55 & 27\\
 Total depth <= 500 & 910361 & 5.96 & 27\\
@@ -50,7 +50,7 @@ All 3 replicates match & 2150 & - & 0\\
 Only variable sites & 4 & - & 0\\
 \bottomrule
 \end{tabularx}
-\titlecaption{Number of Detected Variants After Each Filtering Step}{The number of variants detected at each filtering step. Each row introduces a new filter that applies in addition to all the filters in the above rows. A description of each filter, the number of variants remaining after the filter has been applied, the estimated number of false positives present at that point in filtering, and the number of variants that overlaps the previously estimated confident set of variants. Since the last two steps include filtering based on replicate agreement, the method for estimating the number of false positives is not applicable; in the worst case, they are identical to the number of estimated false positives in step 6. True positives were estimated using the number of variants ultimately detected in the confident set described in \cite{orr_phylogenomic_2020}, which contains 90 variants.}
+\titlecaption{Number of detected variants after each filtering step}{The number of variants detected at each filtering step. Each row introduces a new filter that applies in addition to all the filters in the above rows. A description of each filter, the number of variants remaining after the filter has been applied, the estimated number of false positives present at that point in filtering, and the number of variants that overlaps the previously estimated confident set of variants. Since the last two steps include filtering based on replicate agreement, the method for estimating the number of false positives is not applicable; in the worst case, they are identical to the number of estimated false positives in step 6. True positives were estimated using the number of variants ultimately detected in the confident set described in \cite{orr_phylogenomic_2020}, which contains 90 variants.}
 \label{tbl:ev_num_variants}
 \end{table}
 
@@ -61,21 +61,34 @@ The trees inferred from the set of variants detected at each site are shown in F
 %TODO: put this table on multiple pages
 
 \begin{figure}
+% \ContinuedFloat*
 \centering
-\begin{tabularx}{\textwidth}{ >{\hsize=.5\hsize\linewidth=\hsize}X >{\hsize=1.5\hsize\linewidth=\hsize}X | >{\hsize=.5\hsize\linewidth=\hsize}X >{\hsize=1.5\hsize\linewidth=\hsize}X }
+\begin{tabularx}{.7\textwidth}{ >{\hsize=.7\hsize\linewidth=\hsize}X >{\hsize=1.3\hsize\linewidth=\hsize}X}
 \toprule
-Filtering Step & Tree & Filtering Step & Tree \\
+Filtering Step & Tree \\
 \midrule
-First 11 Scaffolds & \includegraphics[width=\linewidth]{01-first-11-scaffolds.pdf} &
-Depth <= 500 & \includegraphics[width=\linewidth]{02-depth.pdf} \\
-Not within 50bp of an indel & \includegraphics[width=\linewidth]{04-near-indel.pdf} &
-Biallelic SNPs & \includegraphics[width=\linewidth]{05-biallelic.pdf}\\
-Outside repeat regions & \includegraphics[width=\linewidth]{06-repeat.pdf} &
-All 3 replicates match and Only variable sites & \includegraphics[width=\linewidth]{07-replicate.pdf}\\
+First 11 Scaffolds & \includegraphics[width=.9\linewidth]{01-first-11-scaffolds.pdf} \\
+Depth <= 500 & \includegraphics[width=.9\linewidth]{02-depth.pdf} \\
+Not within 50bp of an indel & \includegraphics[width=.9\linewidth]{04-near-indel.pdf} \\
 % Only variable sites & \includegraphics[width=\linewidth]{08-variable.pdf}\\
 \bottomrule
 \end{tabularx}
-\titlecaption{Trees Inferred At Each Filtering Step}{Since each sample was derived from the branch of a tree, its genetic structure should match the physical branching structure. Thus, a phylogeny can visualize the quality of the resultant variant calls; if there are a sufficient number of true positive calls and not many false positives, the phylogeny should match the true structure.}
+\end{figure}
+
+\begin{figure}
+% \ContinuedFloat
+\centering
+\begin{tabularx}{.7\textwidth}{ >{\hsize=.7\hsize\linewidth=\hsize}X >{\hsize=1.3\hsize\linewidth=\hsize}X }
+\toprule
+Filtering Step & Tree \\
+\midrule
+Biallelic SNPs & \includegraphics[width=.9\linewidth]{05-biallelic.pdf}\\
+Outside repeat \newline regions & \includegraphics[width=.9\linewidth]{06-repeat.pdf} \\
+All 3 replicates match and only variable sites & \includegraphics[width=.9\linewidth]{07-replicate.pdf}\\
+% Only variable sites & \includegraphics[width=\linewidth]{08-variable.pdf}\\
+\bottomrule
+\end{tabularx}
+\titlecaption{Trees inferred at each filtering step}{Since each sample was derived from the branch of a tree, its genetic structure should match the physical branching structure. Thus, a phylogeny can visualize the quality of the resultant variant calls; if there are a sufficient number of true positive calls and not many false positives, the phylogeny should match the true structure.}
 \label{fig:ev_filtertrees}
 \end{figure}
 
@@ -85,7 +98,26 @@ Unfortunately, DiscoSNP++ was not able to accurately detect mutations in this da
 
 At the same time, the estimated trees (Figure \ref{fig:ev_filtertrees}) show a lack of discernable signal that the variant caller is able to capture the tree structure of the data. This seems to contradict the number of false positives found at each step; if there are relatively few false positives, true mutations should drive tree construction and the trees should match the structure of the true tree---or at the very least, replicates of the same sample should be close together on the trees.
 
-However, both tree construction and the procedure for estimating the false positive rate rely on concordance of all replicate genotypes at every site. However, the variant calls emitted by DiscoSNP++ are very sparse, with many sites having at least one missing (./.) genotype. The presence of a missing genotype for any site would eliminate the ability for it to both count as a false positive and contribute useful information during phylogeny construction. Thus, the estimate of the number of false positive sites is artificially deflated, and the number of informative sites in the alignment is small. 
+However, both tree construction and the procedure for estimating the false positive rate rely on concordance of all replicate genotypes at every site. But the variant calls emitted by DiscoSNP++ are very sparse, and many sites having at least one missing (./.) genotype (see Table \ref{tbl:ev_missing}). The presence of a missing genotype for any site would eliminate the ability for it to both count as a false positive and contribute useful information during phylogeny construction. Thus, the estimate of the number of false positive sites is artificially deflated, and the number of informative sites in the alignment is small. 
+
+\begin{table}
+\centering
+\begin{tabularx}{.8\textwidth}{ l X r }
+\toprule
+\textbf{Filter} & \textbf{Number of sites with \newline a missing genotype} & \textbf{Percent}\\
+\midrule
+Appears in first 11 scaffolds & 639441 & 67\\
+Total depth <= 500 & 636012 & 70\\
+Not within 50bp of an indel & 623544 & 70\\
+Biallelic SNPs & 547636 & 67\\
+Outside repeat regions & 425544 & 98\\
+All 3 replicates match & 309 & 14\\
+Only variable sites & 0 & 0\\
+\bottomrule
+\end{tabularx}
+\titlecaption{Number of sites with a missing genotype after each filtering step}{The number of sites with a missing genotype after each filtering step. Many missing genotypes makes it difficult to accurately resolve the tree. In the second to last step, when there are relatively few missing genotypes, there aren't sufficient informative sites to accurately construct the tree.}
+\label{tbl:ev_missing}
+\end{table}
 
 	%todo: make table with number of sites that have at least 1 missing genotype
 	%todo: list number of N's in each tree

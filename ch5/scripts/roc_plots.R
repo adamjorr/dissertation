@@ -1,4 +1,4 @@
-    #!/usr/bin/env Rscript
+#!/usr/bin/env Rscript
 
 #ROCs on ROCs on ROCs!!
 
@@ -52,7 +52,7 @@ plot_roc <- function(df){
   just_empirical <- df %>%
     ungroup() %>%
     filter(FalseNegativeRate == "kbbq" | FalseNegativeRate == "raw") %>%
-    select(FalseNegativeRate, FP, TPc)
+    select(FalseNegativeRate, FPR, sensitivity)
   
   df %>%
     unite("FNR_FPR", c(FalseNegativeRate,FalsePositiveRate), remove = FALSE) %>%
@@ -60,17 +60,15 @@ plot_roc <- function(df){
     mutate(FalsePositiveRate = fct_collapse(FalsePositiveRate,
       empirical = c('kbbq','raw')
     )) %>%
-    ggplot(aes(FP,TPc)) +
+    ggplot(aes(FPR,sensitivity)) +
     facet_grid(rows = vars(FalsePositiveRate), as.table = FALSE, 
                margins = TRUE, labeller = rate_labeller) +
     # geom_line(aes(color = factor(FalseNegativeRate, levels = c("raw",0,20,40,60,80,100)), group = FNR_FPR)) +
     geom_line(aes(color = FalseNegativeRate, group = FNR_FPR)) +
     scale_color_viridis_d('Variable\nSites\nFNR', option = 'viridis') +
-    xlab("False Positive Calls") +
-    ylab("True Positive Calls") +
-    theme_minimal(base_size = 18) + 
-    theme(plot.margin = margin(0,0,0,0),
-          strip.text.y = element_text(angle = 0)) +
+    xlab("False Positive Rate") +
+    ylab("True Positive Rate") +
+    theme(strip.text.y = element_text(angle = 0)) +
     geom_line(data = just_empirical, aes(color = FalseNegativeRate, group = FalseNegativeRate)) #add empirical on top of every plot
 }
 
@@ -86,7 +84,8 @@ plot_roc_maxf <- function(df){
     summarize(maxf = max(f)) %>%
     ggplot(aes(FalseNegativeRate,FalsePositiveRate)) +
     geom_raster(aes(fill = maxf)) +
-    scale_fill_viridis_c()
+    scale_fill_viridis_c() + 
+    coord_fixed(ratio = 1)
 }
 
 #the value of the statistic where F is maximized
@@ -98,8 +97,7 @@ plot_roc_argmaxf <- function(df, var){
     scale_fill_viridis_c() +
     xlab("Variable Sites FNR") +
     ylab("Variable Sites FPR") +
-    theme_minimal(base_size = 18) + 
-    theme(plot.margin = margin(0,0,0,0))
+    coord_fixed(ratio = 1)
 }
 
 plot_roc_avgf <- function(df){
@@ -110,8 +108,7 @@ plot_roc_avgf <- function(df){
     scale_fill_viridis_c() + 
     xlab("Variable Sites FNR") +
     ylab("Variable Sites FPR") +
-    theme_minimal(base_size = 18) + 
-    theme(plot.margin = margin(0,0,0,0))
+    coord_fixed(ratio = 1)
 }
 
 #emulate filtering on an (exclusive) maximum and minimum value.
@@ -152,19 +149,27 @@ emulate_filter <- function(df, var, min, max){
 # --- Main ---
 fpr <- seq(0,100,20)
 
+#zcat ansites.bed.gz | awk '{x += ($3-$2)}END{print x}'
+neg_sites <- 213684509
+
+#set theme
+theme_set(theme_minimal(base_size = 22, base_family = 'Times') +
+            theme(plot.margin = margin(0,0,0,0))
+          )
+
 # I plot the ROC, argmaxf, and avgf
 
 #qualroc
-qualroc <- import_rtg_rocs(fpr,fpr,"QUAL")
+qualroc <- import_rtg_rocs(fpr,fpr,"QUAL") %>% mutate(FPR = FP/neg_sites)
 
 pdf("../figures/qualroc.pdf", width = 9, height = 7)
-qualroc %>% plot_roc() + xlim(0,3000) +
-  ggtitle("Better Calibration Makes QUAL A Better Classifier")
+qualroc %>% plot_roc() + xlim(0 , 2e-5) +
+  ggtitle("QUAL ROC")
 dev.off()
 
 pdf("../figures/qualmaxf.pdf", width = 9, height = 7)
 qualroc %>% plot_roc_argmaxf(QUAL) +
-  ggtitle("Better Calibration Makes Optimal QUAL Filter Larger")
+  ggtitle("QUAL with Best F-statistic")
 dev.off()
 # qualroc %>% plot_roc_avgf() +
 #   ggtitle("Better Calibration Increases Average QUAL F-statistic")
@@ -180,10 +185,10 @@ dev.off()
 # dproc %>% plot_roc_maxf()
 
 #gqroc
-gqroc <- import_rtg_rocs(fpr,fpr,"GQ")
+gqroc <- import_rtg_rocs(fpr,fpr,"GQ") %>% mutate(FPR = FP/neg_sites)
 pdf("../figures/gqroc.pdf", width = 9, height = 7)
 gqroc %>% plot_roc() +
-  ggtitle("Better Calibration Reduces Classifying Power of GQ")
+  ggtitle("GQ ROC")
 dev.off()
 # gqroc %>% plot_roc_argmaxf(GQ) +
 #   ggtitle("")

@@ -22,6 +22,13 @@
 \usepackage{multirow}
 \usepackage{minted}
 \usepackage{textcase}
+% \usepackage{caption}
+
+
+% \DeclareCaptionLabelFormat{cont}{#1~#2\alph{ContinuedFloat}}
+% \captionsetup[ContinuedFloat]{labelformat=cont}
+
+
 \addglobalbib{ch1/ch1.bib}
 \addglobalbib{ch2/ch2.bib}
 \addglobalbib{ch3/ch3.bib}
@@ -31,10 +38,13 @@
 \setcounter{biburlnumpenalty}{9000}
 \setcounter{biburlucpenalty}{9100}
 
+\renewcommand{\tabularxcolumn}[1]{m{#1}}
 \newcommand{\titlecaption}[2]{\caption[#1]{\textbf{#1 \textbar\,} #2}}
 \newcommand{\protectedref}[1]{\ref{#1}}
 \newcommand{\phylogenomicref}{\ref{ch:phylogenomic}}
 \newcommand{\kbbqref}{\ref{ch:kbbq}}
+\newcommand{\structuredref}{\ref{ch:structured}}
+\newcommand{\evaluatingref}{\ref{ch:evaluating}}
 \newcommand{\includetwo}[2]{\begin{minipage}{.475\textwidth}%
 \includegraphics[width = \textwidth]{#1}%
 \end{minipage}\hfill\begin{minipage}{.475\textwidth}%
@@ -98,6 +108,7 @@
 \input{ch5/ch5}
 \input{ch6/ch6}
 %-----------------------back matter
+\newpage
 {\singlespace
 % Making the references a "part" rather than a chapter gets it indented at
 % level -1 according to the chart: top of page 4 of the document at

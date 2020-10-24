@@ -91,6 +91,11 @@ fnr <- seq(0,100,20)
 df <- import_fnrfpr_tsvs(fnr,fnr) %>%
   calc_f_and_filter()
 
+#set theme
+theme_set(theme_minimal(base_size = 22, base_family = 'Times') +
+            theme(plot.margin = margin(0,0,0,0))
+)
+
 # --- Plotting ---
 
 #Better calibrated data has more TPs
@@ -101,9 +106,8 @@ df %>%
   scale_fill_viridis_c("TP Calls") +
   scale_x_discrete("Variable Sites FNR") +
   scale_y_discrete("Variable Sites FPR") +
-  ggtitle("Better Calibration Increases\nTrue Positive Calls") +
-  theme_minimal(base_size = 18) + 
-  theme(plot.margin = margin(0,0,0,0))
+  # ggtitle("Better Calibration Increases\nTrue Positive Calls") +
+  ggtitle("Unfiltered True Positive Calls")
 dev.off()
 
 #and more FPs
@@ -114,24 +118,21 @@ df %>%
   scale_fill_viridis_c("FP Calls") +
   scale_x_discrete("Variable Sites FNR") +
   scale_y_discrete("Variable Sites FPR") +
-  ggtitle("Better Calibration Increases\nFalse Positive Calls") +
-  theme_minimal(base_size = 18) + 
-  theme(plot.margin = margin(0,0,0,0))
+  ggtitle("Unfiltered False Positive Calls")
+  # ggtitle("Better Calibration Increases\nFalse Positive Calls") +
 dev.off()
 
 #Shown together
-pdf("../figures/tp_fp_plot.pdf", width = 4, height = 9)
+pdf("../figures/tp_fp_plot.pdf", width = 9, height = 7)
 df %>% ggplot(aes(TP, FP)) +
   geom_point(aes(color = factor(FalseNegativeRate))) +
-  coord_fixed(ratio = 1) +
+  # coord_fixed(ratio = 1) +
   # geom_segment(
   #   aes(x = 267750, y = 7200, xend = 268050, yend = 7200 + (268050-267750))) +
   scale_color_viridis_d("Variable\nSites\nFNR", option = 'viridis') +
-  ggtitle("Better Calibration Produces\nMore Positive Calls") +
-  theme_minimal(base_size = 18) + 
-  theme(plot.margin = margin(0,0,0,0),
-        axis.text = element_text(size = rel(.5)),
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  ggtitle("Unfiltered Positive Calls") +
+  # ggtitle("Better Calibration Produces\nMore Positive Calls") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 dev.off()
 
 #This leads to an increase in sensitivity
@@ -142,10 +143,9 @@ df %>%
   scale_fill_viridis_c('Sensitivity', option = "viridis") + 
   xlab("Variable Sites FNR") +
   ylab("Variable Sites FPR") +
-  ggtitle('Better Calibration Increases Sensitivity') +
-  coord_fixed(ratio = 1) +
-  theme_minimal(base_size = 18) + 
-  theme(plot.margin = margin(0,0,0,0))
+  # ggtitle('Better Calibration Increases Sensitivity') +
+  ggtitle('Unfiltered Sensitivity') +
+  coord_fixed(ratio = 1)
 dev.off()
 
 #But a decrease in precision
@@ -156,24 +156,19 @@ df %>%
   scale_fill_viridis_c('Precision', option = "viridis") + 
   xlab("Variable Sites FNR") +
   ylab("Variable Sites FPR") +
-  ggtitle('Better Calibration Reduces Precision') +
-  coord_fixed(ratio = 1) +
-  theme_minimal(base_size = 18) + 
-  theme(plot.margin = margin(0,0,0,0))
+  ggtitle('Unfiltered Precision') +
+  coord_fixed(ratio = 1)
 dev.off()
 
 #Shown together:
-pdf("../figures/sens_precision.pdf", width = 10, height = 7)
+pdf("../figures/sens_precision.pdf", width = 9, height = 7)
 df %>% ggplot(aes(precision, recall)) +
   geom_point(aes(color = factor(FalseNegativeRate))) +
-  coord_fixed(ratio = 1) +
+  # coord_fixed(ratio = 1) +
   scale_color_viridis_d("Variable\nSites\nFNR", option = 'viridis') +
-  ggtitle("Better Calibration Improves\nSensitivity At A Cost") +
+  ggtitle("Unfiltered Sensitivity and Precision") +
   scale_x_continuous("Precision") +
-  scale_y_continuous("Sensitivity") +
-  theme_minimal(base_size = 18) + 
-  theme(plot.margin = margin(0,0,0,0),
-        axis.text = element_text(size = rel(.5)))
+  scale_y_continuous("Sensitivity")
 dev.off()
 # Taken together, this leads to a reduced F-statistic for the well-calibrated
 # data.
@@ -184,9 +179,7 @@ df %>%
   geom_point(aes(color = FalseNegativeRate)) +
   geom_line(aes(color = FalseNegativeRate, group = FalseNegativeRate)) +
   scale_color_viridis_d("Variable\nSites\nFNR", option = "viridis") +
-  ggtitle("Better Calibration Yields\nLower Call F-statistic") + 
-  theme_minimal(base_size = 18) + 
-  theme(plot.margin = margin(0,0,0,0))
+  ggtitle("Unfiltered F-statistic")
 dev.off()
 # F Heatmap
 pdf("../figures/f_heatmap.pdf", width = 9, height = 7)
@@ -196,10 +189,8 @@ df %>%
   scale_fill_viridis_c('F', option = "viridis") + 
   xlab("Variable Sites FNR") +
   ylab("Variable Sites FPR") +
-  ggtitle('Combined Effect on F-statistic') +
-  coord_fixed(ratio = 1) +
-  theme_minimal(base_size = 18) + 
-  theme(plot.margin = margin(0,0,0,0))
+  ggtitle('Unfiltered F-statistic') +
+  coord_fixed(ratio = 1)
 dev.off()
 #Import filtered DF
 # --- Import Dataframe ---
@@ -267,9 +258,8 @@ fltdf %>%
   scale_fill_viridis_c("TP Calls") +
   scale_x_discrete("Variable Sites FNR") +
   scale_y_discrete("Variable Sites FPR") +
-  ggtitle("Better Calibration Increases True Positive Calls") +
-  theme_minimal(base_size = 18) + 
-  theme(plot.margin = margin(0,0,0,0))
+  ggtitle("Filtered True Positive Calls") +
+  coord_fixed(ratio = 1)
 dev.off()
 
 #and more FPs
@@ -280,23 +270,16 @@ fltdf %>%
   scale_fill_viridis_c("FP Calls") +
   scale_x_discrete("Variable Sites FNR") +
   scale_y_discrete("Variable Sites FPR") +
-  ggtitle("Better Calibration Increases False Positive Calls") +
-  theme_minimal(base_size = 18) + 
-  theme(plot.margin = margin(0,0,0,0))
+  ggtitle("Filtered False Positive Calls") +
+  coord_fixed(ratio = 1)
 dev.off()
 
 #Shown together
 pdf("../figures/flt_tp_fp_plot.pdf", width = 10, height = 6)
 fltdf %>% ggplot(aes(TP, FP)) +
   geom_point(aes(color = factor(FalseNegativeRate))) +
-  coord_fixed(ratio = 1) +
-  # geom_segment(
-    # aes(x = 217500, y = 2800, xend = 219750, yend = 2800 + (219750-217500))) +
   scale_color_viridis_d("Variable\nSites\nFNR", option = 'viridis') +
-  ggtitle("Better Calibration Produces More Positive Calls") +
-  theme_minimal(base_size = 18) + 
-  theme(plot.margin = margin(0,0,0,0),
-        axis.text = element_text(size = rel(.5)))
+  ggtitle("Filtered Positive Calls")
 dev.off()
 
 #This leads to an increase in sensitivity
@@ -307,10 +290,8 @@ fltdf %>%
   scale_fill_viridis_c('Sensitivity', option = "viridis") + 
   xlab("Variable Sites FNR") +
   ylab("Variable Sites FPR") +
-  ggtitle('Better Calibration Increases Sensitivity') +
-  coord_fixed(ratio = 1) +
-  theme_minimal(base_size = 18) + 
-  theme(plot.margin = margin(0,0,0,0))
+  ggtitle('Filtered Sensitivity') +
+  coord_fixed(ratio = 1)
 dev.off()
 
 #But a decrease in precision
@@ -321,25 +302,19 @@ fltdf %>%
   scale_fill_viridis_c('Precision', option = "viridis") + 
   xlab("Variable Sites FNR") +
   ylab("Variable Sites FPR") +
-  ggtitle('Better Calibration Reduces Precision') +
-  coord_fixed(ratio = 1) +
-  theme_minimal(base_size = 18) + 
-  theme(plot.margin = margin(0,0,0,0))
+  ggtitle('Filtered Precision') +
+  coord_fixed(ratio = 1)
 dev.off()
 
 #Shown together:
-pdf("../figures/flt_sens_precision.pdf", width = 4, height = 9)
+pdf("../figures/flt_sens_precision.pdf", width = 9, height = 7)
 fltdf %>% ggplot(aes(precision, recall)) +
   geom_point(aes(color = factor(FalseNegativeRate))) +
-  coord_fixed(ratio = 1) +
+  # coord_fixed(ratio = 1) +
   scale_color_viridis_d("Variable\nSites\nFNR", option = 'viridis') +
-  ggtitle("Better Calibration Improves Sensitivity At A Cost") +
+  ggtitle("Filtered Sensitivity And Precision") +
   scale_x_continuous("Precision") +
-  scale_y_continuous("Sensitivity") +
-  theme_minimal(base_size = 18) + 
-  theme(plot.margin = margin(0,0,0,0),
-        axis.text = element_text(size = rel(.5)),
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  scale_y_continuous("Sensitivity")
 dev.off()
 
 #Show before/after filtering of sensitivity and precision:
@@ -360,9 +335,7 @@ fltdf %>%
   geom_point(aes(color = FalseNegativeRate)) +
   geom_line(aes(color = FalseNegativeRate, group = FalseNegativeRate)) +
   scale_color_viridis_d("Variable\nSites\nFNR", option = "viridis") +
-  ggtitle("After Filtering,\nBetter Calibration Yields\nHigher Call F-statistic") + 
-  theme_minimal(base_size = 18) + 
-  theme(plot.margin = margin(0,0,0,0))
+  ggtitle("Filtered F-statistic")
 dev.off()
 
 # F Heatmap
@@ -373,10 +346,8 @@ fltdf %>%
   scale_fill_viridis_c('F', option = "viridis") + 
   xlab("Variable Sites FNR") +
   ylab("Variable Sites FPR") +
-  ggtitle("After Filtering, Better Calibration\nYields Higher Call F-statistic") +
-  coord_fixed(ratio = 1) +
-  theme_minimal(base_size = 18) + 
-  theme(plot.margin = margin(0,0,0,0))
+  ggtitle("Filtered F-statistic") +
+  coord_fixed(ratio = 1)
 dev.off()
 
 

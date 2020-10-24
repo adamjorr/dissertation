@@ -1,5 +1,5 @@
 
-// FILE:/home/adam/code/cbbq/include/kbbq/kseq.hh 
+// FILE:/home/adam/code/kbbq/include/kbbq/kseq.hh 
 
 
 #ifndef __KBBQ_KSEQ_H
@@ -13,7 +13,7 @@ namespace kseq{
 }
 
 #endif
-// FILE:/home/adam/code/cbbq/include/kbbq/readutils.hh 
+// FILE:/home/adam/code/kbbq/include/kbbq/readutils.hh 
 
 
 #ifndef READUTILS_H
@@ -94,7 +94,7 @@ namespace readutils{
 
 #endif
 
-// FILE:/home/adam/code/cbbq/include/kbbq/gatkreport.hh 
+// FILE:/home/adam/code/kbbq/include/kbbq/gatkreport.hh 
 
 
 #ifndef KBBQ_GATKREPORT_HH
@@ -396,7 +396,7 @@ public:
 }
 
 #endif
-// FILE:/home/adam/code/cbbq/include/kbbq/bloom.hh 
+// FILE:/home/adam/code/kbbq/include/kbbq/bloom.hh 
 
 
 #ifndef KBBQ_BLOOM_HH
@@ -798,6 +798,7 @@ public:
 	inline void insert(const T& t){bloom.insert(t);}
 	inline bool query(const Kmer& kmer) const {return (kmer.valid() && bloom.contains(kmer.get()));}
 	inline double fprate() const {return bloom.effective_fpp();}
+	inline unsigned long long inserted_elements() const {return bloom.element_count();}
 	// inline double fprate() const {return bloom.GetActualFP();}
 };
 
@@ -858,7 +859,7 @@ inline std::ostream& operator<< (std::ostream& stream, const bloom::Kmer& kmer){
 }
 
 #endif
-// FILE:/home/adam/code/cbbq/include/kbbq/covariateutils.hh 
+// FILE:/home/adam/code/kbbq/include/kbbq/covariateutils.hh 
 
 
 #ifndef COVARIATEUTILS_H
@@ -1036,7 +1037,7 @@ public:
 
 }
 #endif
-// FILE:/home/adam/code/cbbq/include/kbbq/recalibrateutils.hh 
+// FILE:/home/adam/code/kbbq/include/kbbq/recalibrateutils.hh 
 
 
 #ifndef RECALIBRATEUTILS_H
@@ -1066,21 +1067,13 @@ namespace htsiter{
 
 namespace recalibrateutils{
 
-typedef std::array<std::vector<uint64_t>, 1<<PREFIXBITS> kmer_cache_t;
-
-//subsample kmers, hash them, and add them to a prefix tree
-//read chunksize kmers at once. if chunksize = -1, read up to MAXINT
-kmer_cache_t subsample_kmers(htsiter::KmerSubsampler& s, uint64_t chunksize = -1);
-
-//read all kmers from the subsampler and load them into a cache.
-kmer_cache_t read_all_kmers(htsiter::KmerSubsampler& s, uint64_t chunksize = -1);
-
-//add kmers in a given cache to the given assembly of bloom filters.
-void add_kmers_to_bloom(const kmer_cache_t& kmers, bloom::Bloom& filters);
+//subsample kmers, hash them, and add them to the bloom filter
+void subsample_kmers(htsiter::KmerSubsampler& s, bloom::Bloom& sampled);
 
 //get some reads from a file, whether a kmer is trusted and put it in a cache.
 //this can probably be parallelized if needed because the reads are independent
-kmer_cache_t find_trusted_kmers(htsiter::HTSFile* file, const bloom::Bloom& sampled, std::vector<int> thresholds, int k, uint64_t chunksize = -1);
+void find_trusted_kmers(htsiter::HTSFile* file, bloom::Bloom& trusted,
+	const bloom::Bloom& sampled, std::vector<int> thresholds, int k);
 
 inline long double q_to_p(int q){return std::pow(10.0l, -((long double)q / 10.0l));}
 inline int p_to_q(long double p, int maxscore = 42){return p > 0 ? (int)(-10 * std::log10(p)) : maxscore;}
@@ -1095,7 +1088,7 @@ void recalibrate_and_write(htsiter::HTSFile* in, const covariateutils::dq_t& dqs
 }
 
 #endif
-// FILE:/home/adam/code/cbbq/include/kbbq/htsiter.hh 
+// FILE:/home/adam/code/kbbq/include/kbbq/htsiter.hh 
 
 
 #ifndef KBBQ_HTSITER_H
@@ -1110,6 +1103,7 @@ void recalibrate_and_write(htsiter::HTSFile* in, const covariateutils::dq_t& dqs
 #include <htslib/sam.h>
 #include <htslib/kseq.h>
 #include <htslib/kstring.h>
+#include <htslib/thread_pool.h>
 #include <minion.hpp>
 #include "readutils.hh"
 #include "kseq.hh"
@@ -1157,10 +1151,14 @@ public:
 	samFile *of;
 	bool use_oq;
 	bool set_oq;
-	BamFile(std::string filename, bool use_oq = false, bool set_oq = false):
-		use_oq(use_oq), set_oq(set_oq){
+	htsThreadPool* tp;
+	BamFile(std::string filename, htsThreadPool* tp, bool use_oq = false, bool set_oq = false):
+		use_oq(use_oq), set_oq(set_oq), tp(tp){
 		r = bam_init1();
 		sf = sam_open(filename.c_str(), "r");
+		if(tp->pool && hts_set_thread_pool(sf, tp) != 0){
+			std::cerr << "Couldn't attach thread pool to file " << filename << std::endl;
+		};
 	    h = sam_hdr_read(sf);
 	    //TODO: support iteration with index?
 	    // idx = sam_index_load(sf, filename.c_str());
@@ -1199,8 +1197,12 @@ public:
 	BGZF* fh;
 	kseq::kseq_t* r;
 	BGZF* ofh;
-	FastqFile(std::string filename): ofh(NULL){
+	htsThreadPool* tp;
+	FastqFile(std::string filename, htsThreadPool* tp): ofh(NULL), tp(tp){
 		fh = bgzf_open(filename.c_str(),"r");
+		if(tp->pool && bgzf_thread_pool(fh, tp->pool, tp->qsize) < 0){
+			std::cerr << "Couldn't attach thread pool to file " << filename << std::endl;
+		}
 		r = kseq::kseq_init(fh);
 	};
 	~FastqFile(){

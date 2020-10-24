@@ -1,9 +1,29 @@
+\chapter{Code to reproduce analyses in Chapter \protect\structuredref{}}
+\label{ch:structured_code}
+\inputminted[breaklines]{Makefile}{ch3/scripts/ch3_makefiles.txt}
 
-\chapter{Code to generate Chapter \protect\kbbqref{} plots}
+\chapter{Code to reproduce analyses in Chapter \protect\kbbqref{}}
 \label{ch:kbbq_plot_code}
-\inputminted{r}{ch4/scripts/plot_benchmarks.R}
+\section{Data analysis code}
+\inputminted[breaklines]{Makefile}{ch4/scripts/ch4_makefiles.txt}
+\section{Code to generate plots}
+\inputminted[breaklines]{r}{ch4/scripts/plot_benchmarks.R}
 
-\chapter{KBBQ Program Code}
+\chapter{KBBQ program code}
 \label{ch:kbbq_code}
+\section{Headers}
 \inputminted[breaklines]{cpp}{ch4/scripts/kbbq_include.hh}
+\section{Source}
 \inputminted[breaklines]{cpp}{ch4/scripts/kbbq_src.cc}
+
+\chapter{Code to reproduce analyses in Chapter \protect\evaluatingref{}}
+\label{ch:evaluating_code}
+\section{Code to call variants with simulated data}
+\inputminted[breaklines]{Makefile}{ch5/scripts/sim_variants_makefiles.txt}
+\section{Code to call variants with \textit{E. melliodora} data}
+\inputminted[breaklines]{Makefile}{ch5/scripts/euc_variants_makefiles.txt}
+\section{ROC plotting code}
+\inputminted[breaklines]{r}{ch5/scripts/roc_plots.R}
+\section{Summary plotting code}
+\inputminted[breaklines]{r}{ch5/scripts/hapdip_summary_plots.R}
+

@@ -1,4 +1,4 @@
-# USAGE: cat_scripts [-c #] dir
+# USAGE: cat_scripts [-c //] [-s .cc] dir
 # Concatenate scripts in the input directory.
 # Each will have the comment characters appended to the top.
 
@@ -28,4 +28,5 @@ done
 shift $((OPTIND-1))
 
 find $1 -name '*'${SUFFIX} -print0 | \
+tac -s $'\0' | \
 xargs -0 -n 1 -I{} echo cat "<(echo -e \\\n${CCHAR} FILE:{} \\\n\\\n)" {} | bash

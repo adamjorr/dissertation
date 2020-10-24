@@ -129,7 +129,7 @@ import_comparison_csvs <- function(){
     filter(CovariateName == 'QualityScore' & Recalibration == 'Before')
   chimp_comparison_df <- get_gatk_csv_file('chimpaln') %>%
     read_csv() %>%
-    filter(CovariateName == 'QualityScore' & Recalibration == 'Before')
+    filter(CovariateName == 'QualityScore' & Recalibration == 'After')
   comparison_dfs <- list( KBBQ = kbbq_comparison_df,
                           GATK = gatk_comparison_df,
                           Raw = raw_comparison_df,
@@ -146,13 +146,12 @@ plot_fnr_csvs <- function(gatk_df){
     geom_abline(slope = 1, intercept = 0) +
     geom_point(aes(color = factor(FalseNegativeRate)), size = 2) +
     geom_line(aes(color = factor(FalseNegativeRate)), size = 1) +
-    scale_color_brewer('Known Sites\nFalse Negative\nRate', palette = 'PRGn') +
+    # scale_color_brewer('Known Sites\nFalse Negative\nRate', palette = 'PRGn') +
+    scale_color_viridis_d('Known Sites\nFalse Negative\nRate') +
     scale_x_continuous("Predicted Quality") +
     scale_y_continuous("Actual Quality") +
     ggtitle('False Negative Variants Cause Underconfidence') +
-    coord_fixed(ratio = 1) +
-    theme_minimal(base_size = 18) + 
-    theme(plot.margin = margin(0,0,0,0))
+    coord_fixed(ratio = 1)
 }
 
 plot_fpr_csvs <- function(gatk_df){
@@ -160,13 +159,12 @@ plot_fpr_csvs <- function(gatk_df){
     geom_abline(slope = 1, intercept = 0) +
     geom_point(aes(color = factor(FalsePositiveRate)), size = 2) +
     geom_line(aes(color = factor(FalsePositiveRate)), size = 1) +
-    scale_color_brewer('Known Sites\nFalse Positive\nRate', palette = 'PRGn') +
+    # scale_color_brewer('Known Sites\nFalse Positive\nRate', palette = 'PRGn') +
+    scale_color_viridis_d('Known Sites\nFalse Positive\nRate') +
     scale_x_continuous("Predicted Quality") +
     scale_y_continuous("Actual Quality") +
     ggtitle('False Positive Variants Alone Have Little Effect') +
-    coord_fixed(ratio = 1) +
-    theme_minimal(base_size = 18) + 
-    theme(plot.margin = margin(0,0,0,0))
+    coord_fixed(ratio = 1)
 }
 
 plot_comparison_dfs <- function(comparison_dfs){
@@ -174,13 +172,12 @@ plot_comparison_dfs <- function(comparison_dfs){
     geom_abline(slope = 1, intercept = 0) +
     geom_point(aes(color = CalibrationMethod), size = 2) +
     geom_line(aes(color = CalibrationMethod), size = 1) +
-    scale_color_brewer('Calibration\nMethod', palette = 'Dark2') +
+    # scale_color_brewer('Calibration\nMethod', palette = 'Dark2') +
+    scale_color_viridis_d('Calibration\nMethod') +
     scale_x_continuous("Predicted Quality") +
     scale_y_continuous('Actual Quality') +
     ggtitle('GATK and KBBQ Perform Similarly') +
-    coord_fixed(ratio = 1) +
-    theme_minimal(base_size = 18) +
-    theme(plot.margin = margin(0,0,0,0))
+    coord_fixed(ratio = 1)
 }
 
 abbreviate_rate <- function(str){
@@ -215,10 +212,11 @@ plot_fnrfpr_csvs <- function(gatk_df){
     scale_x_continuous("Predicted Quality") +
     scale_y_continuous("Actual Quality") +
     ggtitle('Combined Effect On Calibration') +
-    coord_fixed(ratio = 1) +
-    theme_minimal(base_size = 18) + 
-    theme(plot.margin = margin(0,0,0,0),
-          axis.text = element_text(size = rel(.5)))
+    theme(axis.text = element_text(size = rel(.4)),
+          strip.text = element_text(size = rel(.6)),
+          axis.text.x = element_text(angle = 45, hjust = 1),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank())
 }
 
 plot_fnrfpr_heatmap <- function(gatk_df){
@@ -238,9 +236,7 @@ plot_fnrfpr_heatmap <- function(gatk_df){
     xlab("False Negative Rate") +
     ylab("False Positive Rate") +
     ggtitle('Combined Effect on RMSE') +
-    coord_fixed(ratio = 1) +
-    theme_minimal(base_size = 18) + 
-    theme(plot.margin = margin(0,0,0,0))
+    coord_fixed(ratio = 1)
 }
 
 
@@ -248,6 +244,10 @@ plot_fnrfpr_heatmap <- function(gatk_df){
 
 fnr <- c(0, 20, 40, 60, 80, 100)
 fpr <- c(0, 20, 40, 60, 80, 100)
+
+theme_set(theme_minimal(base_size = 22, base_family = 'Times') +
+            theme(plot.margin = margin(0,0,0,0))
+)
 
 fnr_df <- average_over_rgs_fnr(import_fnr_csvs(fnr))
 pdf('../figures/fnr.pdf', width = 9, height = 7)
