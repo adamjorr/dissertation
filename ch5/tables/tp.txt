@@ -1,0 +1,8 @@
+01-first-11-scaffolds.tp.result	88
+02-depth.tp.result	87
+03-excesshet.tp.result	86
+04-near-indel.tp.result	69
+05-biallelic.tp.result	67
+06-repeat.tp.result	46
+07-replicate.tp.result	35
+08-variable.tp.result	34

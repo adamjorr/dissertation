@@ -37,6 +37,7 @@
 \addglobalbib{ch6/ch6.bib}
 \setcounter{biburlnumpenalty}{9000}
 \setcounter{biburlucpenalty}{9100}
+\appto{\bibsetup}{\sloppy}
 
 \renewcommand{\tabularxcolumn}[1]{m{#1}}
 \newcommand{\titlecaption}[2]{\caption[#1]{\textbf{#1 \textbar\,} #2}}
@@ -50,6 +51,7 @@
 \end{minipage}\hfill\begin{minipage}{.475\textwidth}%
 \includegraphics[width = \textwidth]{#2}%
 \end{minipage}}
+
 
 
 \begin{document}

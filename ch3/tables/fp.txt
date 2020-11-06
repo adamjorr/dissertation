@@ -1,0 +1,7 @@
+02-depth.result	596 5.96
+05-biallelic.result	568 5.68
+04-near-indel.result	590 5.9
+06-repeat.result	280 2.8
+01-first-11-scaffolds.result	1455 14.55
+07-replicate.result	0 0
+08-variable.result	0 0

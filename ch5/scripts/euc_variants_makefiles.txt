@@ -1,0 +1,400 @@
+
+# FILE:euc_variants/raw/Makefile 
+
+
+VARIANTSDIR = ../gatk4/
+REF = ../e_mel_3/e_mel_3.fa
+REFDICT = $(basename $(REF)).dict
+RAWALIGNMENT = ../alignment.dedup.bam
+REPEATBED = ../liftover/e_mel_3_repeatmask.bed
+RAWVARIANTS = var-calls.vcf.gz
+SCAFFOLDS = $(addprefix scaffold_,$(shell seq 1 11))
+SCAFFOLDEDVARIANTS = $(addsuffix .var-calls.vcf.gz, $(SCAFFOLDS))
+
+SCRIPTDIR = ~/bin/zypy/scripts
+FLTWITHREP = $(SCRIPTDIR)/filt_with_replicates.pl
+DIPLOIDIFY = $(SCRIPTDIR)/diploidify.py
+VCFTOFA = $(SCRIPTDIR)/vcf2fa.sh
+PLOTTREE = $(SCRIPTDIR)/plot_tree.R
+
+ALL = 01-first-11-scaffolds.vcf.gz 02-depth.vcf.gz 03-excesshet.vcf.gz \
+        04-near-indel.vcf.gz 05-biallelic.vcf.gz 06-repeat.vcf.gz \
+        07-replicate.vcf.gz 08-variable.vcf.gz
+
+all: $(ALL) num_variants.txt
+
+.SHELL: bash
+
+.PHONY: all
+
+%.vcf.gz: %.vcf
+	bgzip -c $< >$@
+
+%.vcf.gz.csi: %.vcf.gz
+	bcftools index $<
+
+%.bam.bai: %.bam
+	samtools index $<
+
+.SECONDARY:
+
+.PRECIOUS:
+
+$(SCAFFOLDEDVARIANTS): %.var-calls.vcf.gz: $(RAWALIGNMENT) $(REF) $(RAWALIGNMENT).bai $(REFDICT)
+	~/.local/bin/gatk HaplotypeCaller -I $< -R $(word 2, $^) --native-pair-hmm-threads 8 --heterozygosity 0.025 -O $@ --QUIET true -L $*
+
+$(RAWVARIANTS): $(REFDICT) $(SCAFFOLDEDVARIANTS)
+	picard SortVcf O=$@ SEQUENCE_DICTIONARY=$< $(addprefix I=,$(wordlist 2,$(words $^),$^))
+
+01-first-11-scaffolds.vcf.gz: $(RAWVARIANTS) $(RAWVARIANTS).csi
+	bcftools view -r scaffold_1,scaffold_2,scaffold_3,scaffold_4,scaffold_5,scaffold_6,scaffold_7,scaffold_8,scaffold_9,scaffold_10,scaffold_11 -Oz -o $@ $<
+
+02-depth.vcf.gz: 01-first-11-scaffolds.vcf.gz 01-first-11-scaffolds.vcf.gz.csi
+	bcftools filter -i 'INFO/DP <= 500' -O z -o $@ $<
+
+03-excesshet.vcf.gz: 02-depth.vcf.gz 02-depth.vcf.gz.csi
+	bcftools filter -i 'ExcessHet <= 40' -O z -o $@ $<
+
+#testing shows -g is applied last
+04-near-indel.vcf.gz: 03-excesshet.vcf.gz 03-excesshet.vcf.gz.csi
+	bcftools filter -g 50 -O z -o $@ $<
+
+05-biallelic.vcf.gz: 04-near-indel.vcf.gz 04-near-indel.vcf.gz.csi
+	bcftools view -m2 -M2 -v snps -O z -o $@ $<
+
+06-repeat.vcf.gz: 05-biallelic.vcf.gz $(REPEATBED) 05-biallelic.vcf.gz.csi
+	vcftools --gzvcf $< --exclude-bed $(word 2, $^) --remove-filtered-all --recode --recode-INFO-all --stdout | bgzip -c > $@
+
+07-replicate.vcf.gz: 06-repeat.vcf.gz 06-repeat.vcf.gz.csi
+	zcat $< | $(FLTWITHREP) -s -g 3 | bgzip -c > $@
+
+08-variable.vcf.gz: 07-replicate.vcf.gz
+	zcat $< | $(DIPLOIDIFY) -t vcf -v | bgzip -c > $@
+
+num_variants.txt: $(ALL)
+	parallel --tag -I{} 'bcftools view -H {} | wc -l' ::: $(ALL) > $@
+
+
+
+# FILE:euc_variants/raw/fnr/Makefile 
+
+
+#VARIANTSDIR = ../../2018-07-24_callability/
+#REF = ../../e_mel_3/e_mel_3.fa
+#ALIGNMENT = $(VARIANTSDIR)/alignment.bam
+#REPEATBED = ../../liftover/e_mel_3_repeatmask.bed
+#RAWVARIANTS = $(VARIANTSDIR)/gatk/var-calls.vcf.gz
+#INREPEATS = $(VARIANTSDIR)/gatk/inrepeats.txt
+DNGCALLS = ../../dng/filter/goodsites.vcf
+
+SCRIPTDIR = ~/bin/zypy/scripts
+FLTWITHREP = $(SCRIPTDIR)/filt_with_replicates.pl
+DIPLOIDIFY = $(SCRIPTDIR)/diploidify.py
+VCFTOFA = $(SCRIPTDIR)/vcf2fa.sh
+PLOTTREE = $(SCRIPTDIR)/plot_tree.R
+CALLABILITYRES = $(SCRIPTDIR)/spiked_mutation_results.py
+
+ALL = 01-first-11-scaffolds.vcf.gz 02-depth.vcf.gz 03-excesshet.vcf.gz \
+	04-near-indel.vcf.gz 05-biallelic.vcf.gz 06-repeat.vcf.gz \
+	07-replicate.vcf.gz 08-variable.vcf.gz
+
+RESULTS = $(addsuffix .result, $(basename $(basename $(ALL))))
+FNRESULTS = $(addsuffix .fn.result, $(basename $(basename $(ALL))))
+TPRESULTS = $(addsuffix .tp.result, $(basename $(basename $(ALL))))
+
+results: fn.txt tp.txt
+
+.PHONY: results
+
+.SECONDARY:
+
+%.vcf.gz: %.vcf
+	bgzip -c $< >$@
+
+%.vcf.gz.csi: %.vcf.gz
+	bcftools index $<
+
+#Calls not in the callset but in DNGCALLS are FN
+%.fn.result: ../%.vcf.gz
+	bcftools view -H -T ^$< $(DNGCALLS) | wc -l > $@
+
+#Calls that match DNGCALLS are TPs
+%.tp.result: ../%.vcf.gz
+	bcftools view -H -T $(DNGCALLS) $< | wc -l > $@
+
+fn.txt: $(FNRESULTS)
+	parallel -I{} --tag 'cat {}' ::: $^ > $@
+
+tp.txt: $(TPRESULTS)
+	parallel -I{} --tag 'cat {}' ::: $^ > $@
+
+# FILE:euc_variants/raw/fdr/Makefile 
+
+
+GATKVARIANTS = ../01-first-11-scaffolds.vcf.gz
+CALLEDVARIANTS = ../08-variable.vcf.gz
+JOBNUMS=$(shell seq 1 100)
+VCFNUMS = $(addsuffix .vcf.gz, $(JOBNUMS))
+JOBCALLS=$(addprefix %/,$(VCFNUMS))
+
+SCRIPTDIR = ~/bin/zypy/scripts
+DIPLOIDIFY = $(SCRIPTDIR)/diploidify.py
+FPRFILT = $(SCRIPTDIR)/gatkfpr.py
+SHUF_LABELS = $(SCRIPTDIR)/label_permutation.R
+SHELL=bash
+DNGCALLS = ../../dng/filter/goodsites.vcf
+##########################################################
+
+ALL = 01-first-11-scaffolds.vcf.gz 02-depth.vcf.gz 03-excesshet.vcf.gz \
+        04-near-indel.vcf.gz 05-biallelic.vcf.gz 06-repeat.vcf.gz \
+        07-replicate.vcf.gz 08-variable.vcf.gz
+
+RESULTS = $(addsuffix .result, $(basename $(basename $(ALL))))
+RESFOLDERS = $(addsuffix /, $(basename $(basename $(ALL))))
+ALLVCFS = $(foreach folder, $(RESFOLDERS), $(addprefix $(folder), $(VCFNUMS)))
+ALLTREES = $(addprefix trees/, $(addsuffix .ped,$(JOBNUMS)))
+
+default: all
+
+all: $(RESULTS) results.txt
+
+.PHONY: all default
+
+.DELETE_ON_ERROR:
+
+.INTERMEDIATE:
+
+.SECONDARY:
+
+#########################################################
+# Helper Rules
+
+%.vcf.gz.csi: %.vcf.gz
+	bcftools index $<
+
+#
+
+trees/:
+	mkdir -p $@
+
+trees/%.ped: trees/
+	echo "##PEDNG v1.0" > $@; echo -e "M\t.\t.\t0" | paste - <( $(SHUF_LABELS) ) >> $@
+
+$(RESFOLDERS):
+	mkdir -p $@
+
+vpath %.ped trees/
+
+$(ALLVCFS): | $(RESFOLDERS)
+	$(FPRFILT) -n 3 -v ../$(subst /,,$(dir $@)).vcf.gz -p trees/$(notdir $(basename $(basename $@))).ped | \
+	$(DIPLOIDIFY) -t vcf -v | bgzip > $@
+
+$(RESULTS): %.result : $(DNGCALLS) $(JOBCALLS)
+	rm -f $@; for f in $(wordlist 2,$(words $^),$^) ; do bcftools view -H -T ^$< $$f | wc -l >> $@; done
+
+#FP, FP/P (FDR)
+results.txt: $(RESULTS)
+	parallel -I{} --tag 'cat {} | awk "{x+=\$$1}END{print x,x/NR}"' ::: $^ > $@
+
+
+# FILE:euc_variants/kbbq/Makefile 
+
+
+VARIANTSDIR = ../gatk4/
+REF = ../e_mel_3/e_mel_3.fa
+REFDICT = $(basename $(REF)).dict
+RAWALIGNMENT = ../alignment.dedup.bam
+KBBQALIGNMENT = recalibrated.bam
+REPEATBED = ../liftover/e_mel_3_repeatmask.bed
+RAWVARIANTS = var-calls.vcf.gz
+SCAFFOLDS = $(addprefix scaffold_,$(shell seq 1 11))
+SCAFFOLDEDVARIANTS = $(addsuffix .var-calls.vcf.gz, $(SCAFFOLDS))
+
+SCRIPTDIR = ~/bin/zypy/scripts
+FLTWITHREP = $(SCRIPTDIR)/filt_with_replicates.pl
+DIPLOIDIFY = $(SCRIPTDIR)/diploidify.py
+VCFTOFA = $(SCRIPTDIR)/vcf2fa.sh
+PLOTTREE = $(SCRIPTDIR)/plot_tree.R
+
+ALL = 01-first-11-scaffolds.vcf.gz 02-depth.vcf.gz 03-excesshet.vcf.gz \
+        04-near-indel.vcf.gz 05-biallelic.vcf.gz 06-repeat.vcf.gz \
+        07-replicate.vcf.gz 08-variable.vcf.gz
+
+all: $(ALL) num_variants.txt
+
+.SHELL: bash
+
+.PHONY: all
+
+%.vcf.gz: %.vcf
+	bgzip -c $< >$@
+
+%.vcf.gz.csi: %.vcf.gz
+	bcftools index $<
+
+%.bam.bai: %.bam
+	samtools index $<
+
+.SECONDARY:
+
+.PRECIOUS:
+
+$(KBBQALIGNMENT): $(RAWALIGNMENT)
+	~/bin/cbbq/build/cbbq -t12 -k32 -g 605951511 -c 240 $< > $@ 2> cbbq.log
+
+$(SCAFFOLDEDVARIANTS): %.var-calls.vcf.gz: $(KBBQALIGNMENT) $(REF) $(KBBQALIGNMENT).bai $(REFDICT)
+	~/.local/bin/gatk HaplotypeCaller -I $< -R $(word 2, $^) --heterozygosity 0.025 -O $@ --QUIET -L $*
+
+$(RAWVARIANTS): $(REFDICT) $(SCAFFOLDEDVARIANTS)
+	picard SortVcf O=$@ SEQUENCE_DICTIONARY=$< $(addprefix I=,$(wordlist 2,$(words $^),$^))
+
+01-first-11-scaffolds.vcf.gz: $(RAWVARIANTS) $(RAWVARIANTS).csi
+	bcftools view -r scaffold_1,scaffold_2,scaffold_3,scaffold_4,scaffold_5,scaffold_6,scaffold_7,scaffold_8,scaffold_9,scaffold_10,scaffold_11 -Oz -o $@ $<
+
+02-depth.vcf.gz: 01-first-11-scaffolds.vcf.gz 01-first-11-scaffolds.vcf.gz.csi
+	bcftools filter -i 'INFO/DP <= 500' -O z -o $@ $<
+
+03-excesshet.vcf.gz: 02-depth.vcf.gz 02-depth.vcf.gz.csi
+	bcftools filter -i 'ExcessHet <= 40' -O z -o $@ $<
+
+#testing shows -g is applied last
+04-near-indel.vcf.gz: 03-excesshet.vcf.gz 03-excesshet.vcf.gz.csi
+	bcftools filter -g 50 -O z -o $@ $<
+
+05-biallelic.vcf.gz: 04-near-indel.vcf.gz 04-near-indel.vcf.gz.csi
+	bcftools view -m2 -M2 -v snps -O z -o $@ $<
+
+06-repeat.vcf.gz: 05-biallelic.vcf.gz $(REPEATBED) 05-biallelic.vcf.gz.csi
+	vcftools --gzvcf $< --exclude-bed $(word 2, $^) --remove-filtered-all --recode --recode-INFO-all --stdout | bgzip -c > $@
+
+07-replicate.vcf.gz: 06-repeat.vcf.gz 06-repeat.vcf.gz.csi
+	zcat $< | $(FLTWITHREP) -s -g 3 | bgzip -c > $@
+
+08-variable.vcf.gz: 07-replicate.vcf.gz
+	zcat $< | $(DIPLOIDIFY) -t vcf -v | bgzip -c > $@
+
+num_variants.txt: $(ALL)
+	parallel --tag -I{} 'bcftools view -H {} | wc -l' ::: $(ALL) > $@
+
+
+
+# FILE:euc_variants/kbbq/fnr/Makefile 
+
+
+#VARIANTSDIR = ../../2018-07-24_callability/
+#REF = ../../e_mel_3/e_mel_3.fa
+#ALIGNMENT = $(VARIANTSDIR)/alignment.bam
+#REPEATBED = ../../liftover/e_mel_3_repeatmask.bed
+#RAWVARIANTS = $(VARIANTSDIR)/gatk/var-calls.vcf.gz
+#INREPEATS = $(VARIANTSDIR)/gatk/inrepeats.txt
+DNGCALLS = ../../dng/filter/goodsites.vcf
+
+SCRIPTDIR = ~/bin/zypy/scripts
+FLTWITHREP = $(SCRIPTDIR)/filt_with_replicates.pl
+DIPLOIDIFY = $(SCRIPTDIR)/diploidify.py
+VCFTOFA = $(SCRIPTDIR)/vcf2fa.sh
+PLOTTREE = $(SCRIPTDIR)/plot_tree.R
+CALLABILITYRES = $(SCRIPTDIR)/spiked_mutation_results.py
+
+ALL = 01-first-11-scaffolds.vcf.gz 02-depth.vcf.gz 03-excesshet.vcf.gz \
+	04-near-indel.vcf.gz 05-biallelic.vcf.gz 06-repeat.vcf.gz \
+	07-replicate.vcf.gz 08-variable.vcf.gz
+
+RESULTS = $(addsuffix .result, $(basename $(basename $(ALL))))
+FNRESULTS = $(addsuffix .fn.result, $(basename $(basename $(ALL))))
+TPRESULTS = $(addsuffix .tp.result, $(basename $(basename $(ALL))))
+
+results: fn.txt tp.txt
+
+.PHONY: results
+
+.SECONDARY:
+
+%.vcf.gz: %.vcf
+	bgzip -c $< >$@
+
+%.vcf.gz.csi: %.vcf.gz
+	bcftools index $<
+
+#Calls not in the callset but in DNGCALLS are FN
+%.fn.result: ../%.vcf.gz
+	bcftools view -H -T ^$< $(DNGCALLS) | wc -l > $@
+
+#Calls that match DNGCALLS are TPs
+%.tp.result: ../%.vcf.gz
+	bcftools view -H -T $(DNGCALLS) $< | wc -l > $@
+
+fn.txt: $(FNRESULTS)
+	parallel -I{} --tag 'cat {}' ::: $^ > $@
+
+tp.txt: $(TPRESULTS)
+	parallel -I{} --tag 'cat {}' ::: $^ > $@
+
+# FILE:euc_variants/kbbq/fdr/Makefile 
+
+
+GATKVARIANTS = ../01-first-11-scaffolds.vcf.gz
+CALLEDVARIANTS = ../08-variable.vcf.gz
+JOBNUMS=$(shell seq 1 100)
+VCFNUMS = $(addsuffix .vcf.gz, $(JOBNUMS))
+JOBCALLS=$(addprefix %/,$(VCFNUMS))
+
+SCRIPTDIR = ~/bin/zypy/scripts
+DIPLOIDIFY = $(SCRIPTDIR)/diploidify.py
+FPRFILT = $(SCRIPTDIR)/gatkfpr.py
+SHUF_LABELS = $(SCRIPTDIR)/label_permutation.R
+SHELL=bash
+DNGCALLS = ../../dng/filter/goodsites.vcf
+##########################################################
+
+ALL = 01-first-11-scaffolds.vcf.gz 02-depth.vcf.gz 03-excesshet.vcf.gz \
+        04-near-indel.vcf.gz 05-biallelic.vcf.gz 06-repeat.vcf.gz \
+        07-replicate.vcf.gz 08-variable.vcf.gz
+
+RESULTS = $(addsuffix .result, $(basename $(basename $(ALL))))
+RESFOLDERS = $(addsuffix /, $(basename $(basename $(ALL))))
+ALLVCFS = $(foreach folder, $(RESFOLDERS), $(addprefix $(folder), $(VCFNUMS)))
+ALLTREES = $(addprefix trees/, $(addsuffix .ped,$(JOBNUMS)))
+
+default: all
+
+all: $(RESULTS) results.txt
+
+.PHONY: all default
+
+.DELETE_ON_ERROR:
+
+.INTERMEDIATE:
+
+.SECONDARY:
+
+#########################################################
+# Helper Rules
+
+%.vcf.gz.csi: %.vcf.gz
+	bcftools index $<
+
+#
+
+trees/:
+	mkdir -p $@
+
+trees/%.ped: trees/
+	echo "##PEDNG v1.0" > $@; echo -e "M\t.\t.\t0" | paste - <( $(SHUF_LABELS) ) >> $@
+
+$(RESFOLDERS):
+	mkdir -p $@
+
+vpath %.ped trees/
+
+$(ALLVCFS): | $(RESFOLDERS)
+	$(FPRFILT) -n 3 -v ../$(subst /,,$(dir $@)).vcf.gz -p trees/$(notdir $(basename $(basename $@))).ped | \
+	$(DIPLOIDIFY) -t vcf -v | bgzip > $@
+
+$(RESULTS): %.result : $(DNGCALLS) $(JOBCALLS)
+	rm -f $@; for f in $(wordlist 2,$(words $^),$^) ; do bcftools view -H -T ^$< $$f | wc -l >> $@; done
+
+#FP, FP/P (FDR)
+results.txt: $(RESULTS)
+	parallel -I{} --tag 'cat {} | awk "{x+=\$$1}END{print x,x/NR}"' ::: $^ > $@
+

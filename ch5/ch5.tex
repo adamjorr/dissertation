@@ -55,14 +55,14 @@ To evaluate the output calls, I plotted the number of true positives and false p
 \begin{figure}
 \centering
 \includegraphics[width = .8\textwidth]{tp_fp_plot.pdf}
-\titlecaption{More accurate known sites increases number of unfiltered positive calls}{The output number of positive calls for each dataset. The false negative rate of the set of variable sites used to calibrate the reads used to produce each callset is shown. As the false negative rate decreases, the number of both true positive and false positive calls increases. The raw, uncalibrated data exhibits the highest number of positive calls.}
+\titlecaption{More Accurate Known Sites Increases Number of Unfiltered Positive Calls}{The output number of positive calls for each dataset. The false negative rate of the set of variable sites used to calibrate the reads used to produce each callset is shown. As the false negative rate decreases, the number of both true positive and false positive calls increases. The raw, uncalibrated data exhibits the highest number of positive calls.}
 \label{fig:vc_fptp}
 \end{figure}
 
 \begin{figure}
 \centering
 \includetwo{fp_heatmap.pdf}{tp_heatmap.pdf}
-\titlecaption{Both false negative and false positive rate contribute to increased number of unfiltered positive calls}{The output number of false positive calls for each dataset. The false negative and false positive rate of the set of variable sites used to calibrate the input reads or the name of the dataset for non-simulated datasets is shown on the X and Y axis. The color of each cell represents the number of unfiltered false positive (left) or true positive (right) SNP calls. As the false negative and positive rates of the database of variable sites decrease, the base quality scores become more calibrated, and more calibrated data produces more false positive and true positive calls. However, the raw data produces the most true positives and the most false positives.}
+\titlecaption{Both False Negative and False Positive Rate Contribute to Increased Number of Unfiltered Positive Calls}{The output number of false positive calls for each dataset. The false negative and false positive rate of the set of variable sites used to calibrate the input reads or the name of the dataset for non-simulated datasets is shown on the X and Y axis. The color of each cell represents the number of unfiltered false positive (left) or true positive (right) SNP calls. As the false negative and positive rates of the database of variable sites decrease, the base quality scores become more calibrated, and more calibrated data produces more false positive and true positive calls. However, the raw data produces the most true positives and the most false positives.}
 \label{fig:vc_p}
 \end{figure}
 
@@ -71,14 +71,14 @@ To determine the impact of these variants on the overall quality of the callsets
 \begin{figure}
 \centering
 \includetwo{sensitivity.pdf}{precision.pdf}
-\titlecaption{Better calibration increases sensitivity and reduces precision}{The sensitivity (left) and precision (right) of the variant caller on each dataset with no filtering. As the base quality score calibration of the input reads increases, the sensitivity of the caller increases and the precision decreases. The data with raw quality scores has the highest sensitivity and lowest precision.}
+\titlecaption{Better Calibration Increases Sensitivity and Reduces Precision}{The sensitivity (left) and precision (right) of the variant caller on each dataset with no filtering. As the base quality score calibration of the input reads increases, the sensitivity of the caller increases and the precision decreases. The data with raw quality scores has the highest sensitivity and lowest precision.}
 \label{fig:vc_sens_prech}
 \end{figure}
 
 \begin{figure}
 \centering
 \includegraphics[width = .8\textwidth]{f_heatmap.pdf}
-\titlecaption{F-statistic of unfiltered calls}{The F-statistic of the unfiltered calls of each dataset. As the base quality score calibration of the input reads increases, the F-statistic of the caller decreases. This is driven by the fact that the increase in sensitivity of the caller is much smaller than the decrease in precision. The raw, uncalibrated quality scores have the lowest F-statistic.}
+\titlecaption{F-statistic of Unfiltered Calls}{The F-statistic of the unfiltered calls of each dataset. As the base quality score calibration of the input reads increases, the F-statistic of the caller decreases. This is driven by the fact that the increase in sensitivity of the caller is much smaller than the decrease in precision. The raw, uncalibrated quality scores have the lowest F-statistic.}
 \label{fig:vc_f_heatmap}
 \end{figure}
 
@@ -89,7 +89,7 @@ Since the base quality score of the reads used to support each genotype call evi
 \includegraphics[width = .6\textwidth]{qualroc.pdf} \\
 \vskip 1em
 \includegraphics[width = .6\textwidth]{gqroc.pdf}
-\titlecaption{Unfiltered ROC curves}{The ROC curves for the QUAL (top) and GQ (bottom) score of an output call for the unfiltered calls of each dataset. The color of each line represents the false negative rate of the set of variant sites used as input to recalibrate the reads used to call variants. Each point in the line represents the number of false positive and false negative calls that have a score above the QUAL or GQ threshold for that point. As this threshold decreases, the number of false positives and true positives increases, though at different rates. These plots show that as the false positive rate increases, the number of true positive calls increases at a faster rate for the well-calibrated data than in other datasets for the QUAL classifier, but at a slower rate for the GQ classifier. The values for the two empirical datasets (raw and KBBQ), are shown on each plot. The other lines on each plot show values from calls made with reads that were recalibrated with variable site sets with the shown false positive rate.}
+\titlecaption{Unfiltered ROC Curves}{The ROC curves for the QUAL (top) and GQ (bottom) score of an output call for the unfiltered calls of each dataset. The color of each line represents the false negative rate of the set of variant sites used as input to recalibrate the reads used to call variants. Each point in the line represents the number of false positive and false negative calls that have a score above the QUAL or GQ threshold for that point. As this threshold decreases, the number of false positives and true positives increases, though at different rates. These plots show that as the false positive rate increases, the number of true positive calls increases at a faster rate for the well-calibrated data than in other datasets for the QUAL classifier, but at a slower rate for the GQ classifier. The values for the two empirical datasets (raw and KBBQ), are shown on each plot. The other lines on each plot show values from calls made with reads that were recalibrated with variable site sets with the shown false positive rate.}
 \label{fig:vc_rocs}
 \end{figure}
 
@@ -112,7 +112,7 @@ Ultimately, this alters the sensitivity and precision of each dataset such that 
 \begin{figure}
 \centering
 \includetwo{flt_fp_heatmap.pdf}{flt_tp_heatmap.pdf}
-\titlecaption{Filtered positive calls}{The output number of false positive and true positive calls for each dataset. The false negative and false positive rate of the set of variable sites used to calibrate the input reads is shown on the x and y axis. The color of each cell represents the number of false or true positive SNPs after filtering. As base quality scores become more calibrated, the number of positive calls increases. Note the range of positive calls has increased in comparison to each unfiltered dataset. Before filtering, the difference in the number of true positives between datasets was at most 240; after filtering it rises to 2044.}
+\titlecaption{Filtered Positive Calls}{The output number of false positive and true positive calls for each dataset. The false negative and false positive rate of the set of variable sites used to calibrate the input reads is shown on the x and y axis. The color of each cell represents the number of false or true positive SNPs after filtering. As base quality scores become more calibrated, the number of positive calls increases. Note the range of positive calls has increased in comparison to each unfiltered dataset. Before filtering, the difference in the number of true positives between datasets was at most 240; after filtering it rises to 2044.}
 \label{fig:vc_flt_p}
 \end{figure}
 
@@ -128,14 +128,14 @@ Ultimately, this alters the sensitivity and precision of each dataset such that 
 \begin{figure}
 \centering
 \includetwo{flt_sensitivity.pdf}{flt_precision.pdf}
-\titlecaption{Filtered call sensitivity and precision}{The sensitivity (left) and precision (right) of the variant caller on each dataset after filtering. As the base quality score calibration increases, the sensitivity of the caller increases and the precision decreases, as seen in the unfiltered data. However, the difference between the largest and smallest precision is slightly smaller than in the unfiltered data, and the difference between the largest and smallest recall is much larger.}
+\titlecaption{Filtered Call Sensitivity and Precision}{The sensitivity (left) and precision (right) of the variant caller on each dataset after filtering. As the base quality score calibration increases, the sensitivity of the caller increases and the precision decreases, as seen in the unfiltered data. However, the difference between the largest and smallest precision is slightly smaller than in the unfiltered data, and the difference between the largest and smallest recall is much larger.}
 \label{fig:vc_flt_sp}
 \end{figure}
 
 \begin{figure}
 \centering
 \includetwo{sens_precision.pdf}{flt_sens_precision.pdf}
-\titlecaption{Sensitivity and precision before and after filtering}{The sensitivity and precision of the variant caller on each dataset with no filtering on the left, and after filters are applied on the right. In the unfiltered calls, as the base quality score calibration of the input reads decrease, the sensitivity of the caller decreases but its precision increases. Once the calls are filtered, the same pattern is observed. However, after filtering the range of precision between datasets is much smaller than before filtering. Conversely, the range of sensitivity increases.}
+\titlecaption{Sensitivity and Precision Before and After Filtering}{The sensitivity and precision of the variant caller on each dataset with no filtering on the left, and after filters are applied on the right. In the unfiltered calls, as the base quality score calibration of the input reads decrease, the sensitivity of the caller decreases but its precision increases. Once the calls are filtered, the same pattern is observed. However, after filtering the range of precision between datasets is much smaller than before filtering. Conversely, the range of sensitivity increases.}
 \label{fig:vc_sens_prec}
 \end{figure}
 
@@ -149,7 +149,7 @@ Ultimately, this alters the sensitivity and precision of each dataset such that 
 %TODO: fix figure sizes and title line breaks. combine similar plots into 1 figure to make the whole chapter more readable
 %TODO: add in the raw, uncalibrated data and see where that falls.
 
-\subsection{Variants detected in \textit{E. melliodora}}
+\subsection{Variants Detected in \textit{E. melliodora}}
 
 In order to determine the effect of reference-free recalibration on variant calls, I recalibrated the reads with the reference-free base quality score recalibrator KBBQ (see Chapter \ref{ch:kbbq} for more information on KBBQ). I then called variants and filtered the same way they were called and filtered in \cite{orr_phylogenomic_2020}. The number of variants called at each step in the filtering process is shown in Table \ref{tbl:num_variants}. The number of variants called at each step using uncalibrated reads is shown in Table \ref{tbl:num_raw_variants}. After filtering, 106 variants were detected; 34 of these were also detected in the confident set of variants previously identified. This previous set had a total of 90 variants. Filtering reduced the average number of false positive variants estimated to 35.54. Note that the number of detected sites listed in Table \ref{tbl:num_variants} are not all indicative of mutation, as the number includes heterozygous sites until the last filtering step.
 
@@ -169,7 +169,7 @@ All 3 replicates match & 63793 & - & 35\\
 Only variable sites & 106 & - & 34\\
 \bottomrule
 \end{tabularx}
-\titlecaption{Number of detected variants after KBBQ recalibration}{The number of variants detected at each step in the filtering pipeline. Each row includes a description of each filter and the number of variants remaining after the filter has been applied. It also includes the number of false positives estimated by simulating 100 random, maximally distant trees, using those trees to filter the result at each step, and averaging the number of variants that survive filtering. Since step 7 includes filtering based on replicate agreement, this method cannot detect false positives for step 7 or 8; in the worst case, they are identical to the number of estimated false positives in step 6. True positives were estimated using the number of variants ultimately detected in the confident set described in \cite{orr_phylogenomic_2020}. This set contains a total of 90 variants.}
+\titlecaption{Number of Detected Variants After KBBQ Recalibration}{The number of variants detected at each step in the filtering pipeline. Each row includes a description of each filter and the number of variants remaining after the filter has been applied. It also includes the number of false positives estimated by simulating 100 random, maximally distant trees, using those trees to filter the result at each step, and averaging the number of variants that survive filtering. Since step 7 includes filtering based on replicate agreement, this method cannot detect false positives for step 7 or 8; in the worst case, they are identical to the number of estimated false positives in step 6. True positives were estimated using the number of variants ultimately detected in the confident set described in \cite{orr_phylogenomic_2020}. This set contains a total of 90 variants.}
 \label{tbl:num_variants}
 \end{table}
 
@@ -189,7 +189,7 @@ All 3 replicates match & 63687 & - & 35\\
 Only variable sites & 88 & - & 34\\
 \bottomrule
 \end{tabularx}
-\titlecaption{Number of detected variants using uncalibrated reads}{The number of variants detected at each step in the filtering pipeline using uncalibrated reads. See Table \ref{tbl:num_variants}.}
+\titlecaption{Number of Detected Variants Using Uncalibrated Reads}{The number of variants detected at each step in the filtering pipeline using uncalibrated reads. See Table \ref{tbl:num_variants}.}
 \label{tbl:num_raw_variants}
 \end{table}
 
@@ -217,7 +217,7 @@ Furthermore, this data is from a human-derived cell line, and protocols for DNA 
 
 % Surprisingly, the behavior of the raw dataset is most similar to that of KBBQ and the dataset calibrated with perfect information. At the same time, the patterns observed clearly indicate an effect of calibration on how HaplotypeCaller functions. This can be explained in a few ways; 1) GATK's own calibration method is flawed, and the raw data is truly the best calibrated data, so the trends are real. 2) this dataset is just weird 3) the calibration is actually correct and calibration affects HC in a roundabout way that doesn't directly translate into better calls. The trends are an artifact of that process.
 
-\subsection{KBBQ recalibration improved \textit{E. melliodora} calls}
+\subsection{KBBQ Recalibration Improved \textit{E. melliodora} Calls}
 
 While the simulated datasets revealed a complex interaction between the number of detected variants, sensitivity, precision, and filtering, it appears KBBQ recalibration improved the ability to successfully call variants in a non-model organism. In Chapter \ref{ch:kbbq}, I showed that using GATK's recommended approach of calling confident variants and using those as the set of variable sites to use in recalibration results in poor base quality score calibration. I also showed that using KBBQ improved calibration to be comparable to GATK recalibrations with perfect information. The calls on the simulated datasets shown here also imply that KBBQ recalibrated reads behave similarly to or better than reads recalibrated with GATK using perfect information.
 

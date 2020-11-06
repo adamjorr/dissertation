@@ -6,7 +6,7 @@ Next generation sequencing has a plethora of applications in biology. %TODO: giv
 While the technology is widely applied, the sequencing process is inherently erroneous and errors are common in sequencing data, with base substitution error rate estimates ranging between $.1$ and $1\%$, depending on the sequencing technology used \parencite{fox_accuracy_2014}.
 To help mitigate this, DNA molecules are usually copied and sequenced multiple times to ensure the sequence is correct, since multiple independent measurements are unlikely to all contain the same error at the same position. While this works well in general, it can be costly and additional sample manipulation can damage samples and insert mutations, further increasing the amount of technical error in the data \parencite{schirmer_insight_2015, ma_analysis_2019}.
 
-\subsection{Quality scores}
+\subsection{Quality Scores}
 
 In addition to increased sequencing depth, quality scores are an important part of sequencing data that helps identify erroneous sequences. Sequencing data is usually presented along with quality scores in the Phred scale \parencite{ewing_base-calling_1998, ewing_base-calling_1998-1}.
 These quality scores measure the confidence the instrument has in its determination that any particular base in the sequence is correct.
@@ -24,7 +24,7 @@ If so desired, quantitative scores can be collapsed into coarser categories, suc
 The practice of binning quality scores together with neighboring scores is commonly performed to reduce file size \parencite{shibuya_better_2019, malysa_qvz_2015, yu_quality_2015, noauthor_reducing_2014}. 
 However, it's important to note that this process cannot be simply reversed as information is lost when the scores are binned.
 
-\subsection{Base quality score recalibration}
+\subsection{Base Quality Score Recalibration}
 
 % What is Base Quality Score Recalibration?
 While base quality scores are important for identifying reliable data, base quality scores are often incorrect.
@@ -58,7 +58,7 @@ In the first phase, the algorithm compares each read to the aligned reference. P
 In the second phase, a bayesian hierarchical model is trained with the count data. Using a normal distribution of the mean probability of error as a prior, the \textit{maximum a posteriori} (MAP) quality score of the read group is calculated assuming the errors are binomially distributed. That is,
 \begin{align}
 \hat{Q}_{rg} &= \operatorname{argmax}_{Q_{rg}} P(Q_{rg}|\operatorname{Errors}_{rg}) \\
-&= \operatorname{argmax}_{Q_{rg}} P(\mathcal{B}(\operatorname{Errors}_{rg} | \operatorname{Observations}_{rg}, Q_{rg}) * P(\mathcal{N}(Q_{rg} | \bar{Q}))
+&= \operatorname{argmax}_{Q_{rg}} P(\mathcal{B}(\operatorname{Errors}_{rg} | \operatorname{Observations}_{rg}, Q_{rg}) \times P(\mathcal{N}(Q_{rg} | \bar{Q}))
 \end{align}
 This score is then used as the prior for calculating the \textit{maximum a posteriori} quality score for each assigned quality score in that read group, $\hat{Q}_{\operatorname{assigned\:quality\:score}}$, using a simular formula.
 In turn, this score is used as the prior for calculating the \textit{maximum a posteriori} scores for the sequencing cycle and context covariates of bases with that score. The difference between the MAP estimate and the prior is used to calculate the final score, which is the sum of the MAP estimate of the assigned quality score and these two differences. That is,
@@ -77,7 +77,7 @@ Thus, the need to perform BQSR and the performance of GATK's BQSR algorithm may 
 One objective of this work is to help elucidate when GATK BQSR performs well and when it fails, and provide a method that works in situations that GATK BQSR struggles with.
 As an example, the GATK developers recommend BQSR for use in cancer variant discovery \parencite{cibulskis_sensitive_2013}, but the tumor genome is likely much different from the human genome, and the database of variable sites will likely miss many truly variable sites due to the large mutation rate present in cancer genomes. Additionally, mismatches in reads misaligned due to chromosomal rearrangements may be mistakenly counted as evidence of sequencing error. The number of these errors required to significantly impact the performance of the algorithm is not clear.
 
-\subsection{Alternate approaches for BQSR}
+\subsection{Alternate Approaches for BQSR}
 % What is the problem with current methods for BQSR?
 As illustrated above, the most problematic aspect of GATK BQSR occurs in the first phase of the algorithm: counting erroneous and non-erroneous bases. This is especially true when considering non-model organisms, where alignment errors may be common. Furthermore, in non-model organisms a database of variable sites is likely unavailable or largely incomplete. However, there are methods that attempt to overcome this deficiency. While there exist alternative approaches that implement different error models such as Lacer \parencite{chung_lacer:_2017}, the biggest problem for analyzing data without reliable reference information is the method of counting erroneous and non-erroneous bases.
 % \item In a variant calling context, BQSR is probably most helpful in regions with low coverage, as the limited amount of data makes it difficult to differentiate between errors, heterozygous sites, and mutations.
@@ -104,7 +104,7 @@ Instead of looking at the reference, \texttt{kbbq} implements the error-correcti
 Briefly, the algorithm subsamples k-mers from the dataset. Since erroneous k-mers are expected to be unique, erroneous k-mers are less likely to be sampled than error-free k-mers. A binomial test is then conducted for every nucleotide in the dataset; if a sufficient number of k-mers contain the nucleotide, the base is likely not erroneous and called trusted. If \textit{k} of these trusted bases appear next to each other, that k-mer is stored as a trusted k-mer. Once the trusted k-mers have all been stored, each read is iterated through once again and any bases on the edge of an island of trusted k-mers are changed such that the change produces the maximal number of trusted k-mers in the read. These changes are marked as errors and used to train the model.
 The model training and recalibration procedure are the same as those described above for GATK's BQSR method.
 
-\subsection{KBBQ program input and parameters}
+\subsection{KBBQ Program Input and Parameters}
 
 \texttt{kbbq} requires as input a set of reads in FASTQ \parencite{cock_sanger_2010} or BAM \parencite{li_sequence_2009} format. If the input data is FASTQ formatted and consists of multiple read groups, the read group each read belongs to should be annotated in the name of each read. Alternatively, if the user has an original data file and a data file that has already been corrected using an error correction program, the user may supply the corrected file with the \texttt{-\phantom{}-fixed} option to obtain errors from that correction rather than performing the error correction algorithm included in \texttt{kbbq}. The program's only required parameter is the approximate length of the sequenced region in base-pairs, and this information can be taken from the BAM header if it is present. It may be set with the \texttt{-\phantom{}-genomelen} option. If BAM input is provided, the \texttt{-\phantom{}-set-oq} and \texttt{-\phantom{}-use-oq} flags can be used to set the OQ flag on the read before recalibrating or to use the quality scores encoded in the OQ flag rather than the quality scores in the primary quality score field.
 
@@ -149,11 +149,11 @@ Notably, if $\alpha$ is the recommended value of $\frac{7}{\operatorname{Coverag
 \texttt{-\phantom{}-threads} & \texttt{-t} & 1 & Number of CPU threads to use\\
 \bottomrule
 \end{tabularx}
-\titlecaption{\texttt{kbbq} parameters}{Provides the short options for each long parameter name, the default value of the parameter and a summary of how each parameter changes the behavior of the program.}
+\titlecaption{KBBQ Parameters}{Provides the short options for each long parameter name, the default value of the parameter and a summary of how each parameter changes the behavior of the program.}
 \label{table:params}
 \end{table}
 
-\subsection{Testing and validation}
+\subsection{Testing and Validation}
 % Describe test dataset used for benchmarking.
 To test the performance of \texttt{kbbq}, I reanalyzed the synthetic diploid CHM1-CHM13 dataset from \cite{li_synthetic-diploid_2018}. Like other benchmarking datasets, this dataset includes a BED file describing confident regions in which the genotype of any site that differs from homozygous reference within those regions are included in a VCF file. For the purposes of this work, I assume these confident regions and associated VCF entries are correct and represent the true genotype of the sequenced sample.
 
@@ -181,7 +181,7 @@ To identify how errors in the database of variable sites affects calibration, I 
 \begin{figure}
 \centering
 	\includegraphics[width = .6\textwidth]{fpr.pdf}
-	\titlecaption{False positive only calibration}{Base quality score calibration for a range of false positives in the database of variable sites. The false negative rate for all datasets is zero. Increasing the false positive rate does not significantly impact the quality of the calibration. The poor calibration at a 100\% false negative rate is likely an artifact (see Section \ref{sec:kbbq_discussion}).}
+	\titlecaption{False Positive Only Calibration}{Base quality score calibration for a range of false positives in the database of variable sites. The false negative rate for all datasets is zero. Increasing the false positive rate does not significantly impact the quality of the calibration. The poor calibration at a 100\% false negative rate is likely an artifact (see Section \ref{sec:kbbq_discussion}).}
 	\label{figure:fpr}
 \end{figure}
 
@@ -199,7 +199,7 @@ False Positive Rate & RMSE \\
 100 & 5.50 \\
 \bottomrule
 \end{tabular}
-\titlecaption{False positive calibration errors}{The root mean squared error of quality score for reads recalibrated using a database of variable sites with different false positive rates. The false negative rate for each dataset is 0\%.}
+\titlecaption{False Positive Calibration Errors}{The root mean squared error of quality score for reads recalibrated using a database of variable sites with different false positive rates. The false negative rate for each dataset is 0\%.}
 \label{table:fpr}
 \end{table}
 
@@ -208,7 +208,7 @@ I also simulated different databases of variable sites with differing false nega
 \begin{figure}
 	\centering
 	\includegraphics[width=.6\textwidth]{fnr.pdf}
-	\titlecaption{False negative only calibration}{Base quality score calibration for a range of false negatives in the database of variable sites. The false positive rate for all datasets is zero. Increasing the false negative rate significantly decreases the quality of the calibration, causing increasing  underconfidence in quality scores as the false negative rate rises.}
+	\titlecaption{False Negative Only Calibration}{Base quality score calibration for a range of false negatives in the database of variable sites. The false positive rate for all datasets is zero. Increasing the false negative rate significantly decreases the quality of the calibration, causing increasing  underconfidence in quality scores as the false negative rate rises.}
 	\label{figure:fnr}
 \end{figure}
 
@@ -226,7 +226,7 @@ False Negative Rate & RMSE \\
 100 & 3.20 \\
 \bottomrule
 \end{tabular}
-\titlecaption{False negative calibration errors}{Root mean squared error of quality score for reads recalibrated with a database of variable sites simulated with the given false negative rate. The false positive rate for each dataset is 0\%.}
+\titlecaption{False Negative Calibration Errors}{Root mean squared error of quality score for reads recalibrated with a database of variable sites simulated with the given false negative rate. The false positive rate for each dataset is 0\%.}
 \label{table:fnr}
 \end{table}
 
@@ -236,14 +236,14 @@ As before, the number of false negatives significantly impacted calibration qual
 \begin{figure}
 	\centering
 	\includegraphics[width = \textwidth]{fnrfpr.pdf}
-	\titlecaption{Combined calibration}{Calibration of base quality scores of reads recalibrated using a database of variable sites with varying ranges of false negatives and false positives. The RMSE of the quality scores of the resulting calibration are used to color each line. Across the columns are each false negative rate, and each row represents a false positive rate. Except for at a false negative rate of 0, increasing either the false positive rate or the false negative rate increases the RMSE. See Table \ref{table:fnrfpr} for the RMSE values and the discussion in Section \ref{sec:kbbq_discussion} about false positive rates of 100\%}
+	\titlecaption{Combined Calibration}{Calibration of base quality scores of reads recalibrated using a database of variable sites with varying ranges of false negatives and false positives. The RMSE of the quality scores of the resulting calibration are used to color each line. Across the columns are each false negative rate, and each row represents a false positive rate. Except for at a false negative rate of 0, increasing either the false positive rate or the false negative rate increases the RMSE. See Table \ref{table:fnrfpr} for the RMSE values and the discussion in Section \ref{sec:kbbq_discussion} about false positive rates of 100\%}
 	\label{figure:fnrfpr}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = .6\textwidth]{fnrfpr_heatmap.pdf}
-	\titlecaption{Combined calibration heat map}{Heat map of base quality calibration of varying ranges of false negatives and false positives. Databases of variable sites with differing false positive and false negative rates were constructed and the RMSE of the quality scores of the resulting calibration were calculated. Across the columns are each false negative rate, and each row represents a false positive rate. Except for at a false negative rate of 0, increasing either the false positive rate or the false negative rate increases the RMSE. See Table \ref{table:fnrfpr} for the RMSE values and the discussion in Section \ref{sec:kbbq_discussion} about false positive rates of 100\%}
+	\titlecaption{Combined Calibration Heat Map}{Heat map of base quality calibration of varying ranges of false negatives and false positives. Databases of variable sites with differing false positive and false negative rates were constructed and the RMSE of the quality scores of the resulting calibration were calculated. Across the columns are each false negative rate, and each row represents a false positive rate. Except for at a false negative rate of 0, increasing either the false positive rate or the false negative rate increases the RMSE. See Table \ref{table:fnrfpr} for the RMSE values and the discussion in Section \ref{sec:kbbq_discussion} about false positive rates of 100\%}
 	\label{figure:fnrfpr_heat}
 \end{figure}
 
@@ -263,16 +263,16 @@ As before, the number of false negatives significantly impacted calibration qual
 100 & 8.05 & 22.0 & 24.3 & 26.4 & 25.8 & 28.9 \\
 \bottomrule
 \end{tabularx}
-\titlecaption{Combined calibration errors}{Root mean squared error of base quality score for data calibrated with databases of variable sites containing different levels of false positives and false negatives. The columns indicate false positive rates, the rows indicate false negative rates. The values in each cell are the RMSE of the quality scores for the reads recalibrated with the database of variable sites with false positive and false negative rate appropriate for its row and column. See Figure \ref{figure:fnrfpr_heat} for a graphical representation. The data in the 100\% false positive rows are likely artifacts; see section \ref{sec:kbbq_discussion} for more information.}
+\titlecaption{Combined Calibration Errors}{Root mean squared error of base quality score for data calibrated with databases of variable sites containing different levels of false positives and false negatives. The columns indicate false positive rates, the rows indicate false negative rates. The values in each cell are the RMSE of the quality scores for the reads recalibrated with the database of variable sites with false positive and false negative rate appropriate for its row and column. See Figure \ref{figure:fnrfpr_heat} for a graphical representation. The data in the 100\% false positive rows are likely artifacts; see section \ref{sec:kbbq_discussion} for more information.}
 \label{table:fnrfpr}
 \end{table}
 
-Using GATK's recommended method of using high-confidence variants when a database of variable sites is unavailable produced poorly calibrated data with a RMSE of 1.66. This RMSE is similar to the RMSE of a simulated dataset with a false negative rate of approximately 20\%and a false positive rate between 0 and 20\%. However, the shape of this recalibrated data is also interesting; it seems that the major effect of recalibration was squeezing high quality scores toward the mean, as the highest recalibrated score in the dataset is 34 whereas using the truth set of variants yielded a highest recalibrated score of 44. This calibration and the calibration using the truth set, using KBBQ, and the raw read quality are plotted in Figure \ref{figure:comparison} and the RMSEs of each data set is listed in Table \ref{table:comparison}
+Using GATK's recommended method of using high-confidence variants when a database of variable sites is unavailable produced poorly calibrated data with a RMSE of 3.89. This RMSE is similar to the RMSE of a simulated dataset with a false negative rate of approximately 60\%and a false positive rate around 40\%. However, the shape of this recalibrated data is also interesting; it shows that the quality scores are underconfident for mid-range quality scores and overconfident for high quality scores. This calibration and the calibration using the truth set, using KBBQ, and the raw read quality are plotted in Figure \ref{figure:comparison} and the RMSEs of each data set is listed in Table \ref{table:comparison}
 
 \begin{figure}
 \centering
 \includegraphics[width = .6\textwidth]{comparison.pdf}
-\titlecaption{Comparison of calibration methods}{Chimp-GATK is the result of calibrating the reads using the model trained on the reads aligned to the chimp genome along with the variants called using that alignment. GATK is the result of using GATK's BaseRecalibrator with the truth set of variants. KBBQ is the result of using the KBBQ tool, which requires only reads and no reference or variant set. Raw is the calibration of the uncalibrated data.}
+\titlecaption{Comparison of Calibration Methods}{Chimp-GATK is the result of calibrating the reads using the model trained on the reads aligned to the chimp genome along with the variants called using that alignment. GATK is the result of using GATK's BaseRecalibrator with the truth set of variants. KBBQ is the result of using the KBBQ tool, which requires only reads and no reference or variant set. Raw is the calibration of the uncalibrated data.}
 \label{figure:comparison}
 \end{figure}
 
@@ -282,13 +282,13 @@ Using GATK's recommended method of using high-confidence variants when a databas
 \toprule
 Calibration Method & RMSE \\
 \midrule
-Chimp-GATK & 1.66 \\
+Chimp-GATK & 3.89 \\
 GATK & 0.60 \\
 KBBQ & 0.96 \\
 Raw & 4.05 \\
 \bottomrule
 \end{tabular}
-\titlecaption{Errors of different calibration methods}{Root mean squared error of quality score for reads recalibrated using different methods. Chimp-GATK is the result of calibrating the reads using the model trained on the reads aligned to the chimp genome along with the variants called using that alignment. GATK is the result of using GATK's BaseRecalibrator with the truth set of variants. KBBQ is the result of using the KBBQ tool, which requires only reads and no reference or variant set. Raw is the calibration of the uncalibrated data.}
+\titlecaption{Errors of Different Calibration Methods}{Root mean squared error of quality score for reads recalibrated using different methods. Chimp-GATK is the result of calibrating the reads using the model trained on the reads aligned to the chimp genome along with the variants called using that alignment. GATK is the result of using GATK's BaseRecalibrator with the truth set of variants. KBBQ is the result of using the KBBQ tool, which requires only reads and no reference or variant set. Raw is the calibration of the uncalibrated data.}
 \label{table:comparison}
 \end{table}
 
@@ -313,9 +313,9 @@ The only rate that shows significant deviation from a 0\% false positive rate in
 %new para
 Ultimately, if the false negative and false positive rates of the database of variable sites is high, GATK's procedure for BQSR \textit{can} cause miscalibration of the data worse than using raw quality scores, though this can only happen with very large error rates. In this dataset, the raw data has a RMSE of about 4, which is similar to a simulated dataset with a false negative rate between 40-60\% and a false positive rate between 60-80\%. In a real situation it's unlikely that error rates like this will occur, so BQSR will not severely destroy the input data. However, at even modest false negative and false positive error rates BQSR can cause undesirable miscalibration that could feasibly impact variants called from the data. Interestingly, at all error rates the calibration of quality scores below 25 is almost always correct or 1-off the true value. It seems that errors in the database of variable sites have a larger effect on higher quality predictions than lower ones.
 
-At the same time, the calibration model trained with the chimp-aligned data shows performance worse than a simulated dataset with a false negative rate of approximately 20\%. While the RMSE of 1.66 is not particularly high, the plotted calibration shows very poor performance at higher quality scores, and the maximum quality score the model assigned was 34 in contrast to other methods, which had a maximum assigned score of 44. Additionally, all quality scores assigned above 30 were more than one off the true quality score. And while all the simulated datasets caused underconfidence in the calibration, this calibration method caused overconfidence.
+At the same time, the calibration model trained with the chimp-aligned data shows performance worse than a simulated dataset with a false negative rate around 40-60\%. The RMSE of 3.89 is only slightly better than the RMSE of the raw data and the plotted calibration shows very poor performance at higher quality scores. Additionally, quality scores assigned between 25 and 32 were significantly different than the true quality scores. And while all the simulated datasets caused underconfidence in the calibration, this calibration method caused overconfidence in quality scores above 34.
 
-This suggests that an effect not captured in the simulated data was present in this data. Overconfidence indicates errors that should be counted by the model are instead missed and therefore there are more errors in actuality than the model predicts. Thus the set of variants used to skip errors is too aggressive and contains many false positives. So why is a similar effect not observed in the simulated data? This is likely because of how the simulated datasets were constructed; non-variable sites were selected independently and at random to be added to the set of purported variable sites. Thus a site containing an error and a site not containing an error are selected proportionally. In contrast, on a real dataset a variant calling algorithm would not make false positive errors independently; it is much more likely to classify a site as variable that has a sequencing error than to classify a site as variable that has no errors. That is: in this simulation, $P(\operatorname{classified\:positive} | \operatorname{actual\:negative})$ is independent of $P(\operatorname{sequencing\:error})$, but on an empirical dataset $P(\operatorname{classified\:positive} | \operatorname{actual\:negative})$ is likely not. Thus in reality false positives probably cause overconfidence in a similar manner that false negatives cause underconfidence. This overconfidence is observed in this calibration method.
+This suggests that an effect not captured in the simulated data was present in this data. Overconfidence indicates errors that should be counted by the model are instead missed and therefore there are more errors in actuality than the model predicts. Thus the set of variants used to skip errors is too aggressive and contains many false positives. So why is a similar effect not observed in the simulated data? This is likely because of how the simulated datasets were constructed; non-variable sites were selected independently and at random to be added to the set of purported variable sites. Thus a site containing an error and a site not containing an error are selected proportionally. In contrast, on a real dataset a variant calling algorithm would not make false positive errors independently; it is much more likely to classify a site as variable that has a sequencing error than to classify a site as variable that has no errors. That is: in this simulation, $P(\operatorname{classified\:positive} | \operatorname{actual\:negative})$ is independent of $P(\operatorname{sequencing\:error})$, but on an empirical dataset $P(\operatorname{classified\:positive} | \operatorname{actual\:negative})$ is likely not. Thus in reality false positives probably cause overconfidence in a similar manner that false negatives cause underconfidence. This overconfidence is observed in the Chimp-GATK calibration method.
 
 As the chimp-aligned calibration shows, GATK BQSR struggles on real data from non-model organisms. False negatives are likely to be numerous in almost all but the most well-studied samples \parencite{bobo_false_2016}, and false positives are similarly likely when using poor quality, draft reference genomes that cause alignment errors. This means in most datasets, while its performance may be acceptable if the false negative and false positive rate are sufficiently low, GATK BaseRecalibrator is not the best recalibration method. This is shown in Figure \ref{figure:comparison}, which shows \texttt{kbbq} performing nearly as well as GATK BQSR with perfect knowledge of variable sites. However, \texttt{kbbq} doesn't use any reference or any variant site information to do recalibration. \texttt{kbbq} also performs much better than GATK's recommended procedure when a database of variable sites is not available, as shown in the Chimp-GATK calibration.
 

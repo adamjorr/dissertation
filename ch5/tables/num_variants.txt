@@ -1,0 +1,8 @@
+08-variable.vcf.gz	106
+07-replicate.vcf.gz	63793
+06-repeat.vcf.gz	857810
+05-biallelic.vcf.gz	1913594
+04-near-indel.vcf.gz	3175128
+03-excesshet.vcf.gz	4932628
+02-depth.vcf.gz	9190223
+01-first-11-scaffolds.vcf.gz	9838408

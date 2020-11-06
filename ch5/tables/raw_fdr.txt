@@ -1,0 +1,8 @@
+01-first-11-scaffolds.result	91596 915.96
+02-depth.result	80491 804.91
+03-excesshet.result	14460 144.6
+04-near-indel.result	8568 85.68
+05-biallelic.result	6876 68.76
+06-repeat.result	3654 36.54
+07-replicate.result	0 0
+08-variable.result	0 0

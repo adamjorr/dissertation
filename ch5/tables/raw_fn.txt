@@ -1,0 +1,8 @@
+01-first-11-scaffolds.fn.result	2
+02-depth.fn.result	3
+03-excesshet.fn.result	4
+04-near-indel.fn.result	21
+05-biallelic.fn.result	23
+06-repeat.fn.result	44
+07-replicate.fn.result	55
+08-variable.fn.result	56

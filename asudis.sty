@@ -242,11 +242,15 @@ BIOGRAPHICAL SKETCH
 \renewcommand{\cftaftertoctitle}{\hfill}
 %
 \newcommand{\cftlabel}{CHAPTER}
+% \ifnum \value{chapter}>0 CHAPTER \else APPENDIX \fi}
 %
 % Get rid of the header underline.
 \renewcommand{\headrulewidth}{0pt}
 %
 % Get the header on subsequent pages right.
+
+% \renewcommand{\cftmarktoc}{\cftlabel\hfill{}Page}
+
 \renewcommand{\@cfttocstart}{ 
 \newgeometry{top=1.0in,hmargin=1.25in,height=9.0in,
 includehead,includefoot,letterpaper}%,showcrop,showframe}
@@ -298,9 +302,9 @@ includehead,includefoot,letterpaper}%,showcrop,showframe}
 \refstepcounter{chapter}%
 \typeout{\@chapapp\space\thechapter.}%
 \addcontentsline{toc}{chapter}%
-{\protect\numberline{\thechapter}#1}%
+{\protect\numberline{\thechapter}\MakeUppercase{#1}}%
 \else
-\addcontentsline{toc}{chapter}{#1}%
+\addcontentsline{toc}{chapter}{\MakeUppercase{#1}}%
 \fi
 \chaptermark{#1}%
 

@@ -3,6 +3,7 @@
 #ROCs on ROCs on ROCs!!
 
 library(tidyverse)
+library(colorblindr)
 
 # --- Import Data ---
 #import rtg-eval roc files.
@@ -41,7 +42,8 @@ import_rtg_rocs <- function(fnr, fpr, type){
 
 rate_labeller <- labeller(
   # .cols = function(str){str_replace(str,"^","FNR: 0")},
-  .rows = function(str){str_replace(str,"^80$","FPR:\n80")}
+  # .rows = function(str){str_replace(str,'^(\\d+)$','FPR:\\1')}
+  .rows = function(str){str_replace(str,'^0$','FPR:0')}
 )
 
 # --- Make plots ---
@@ -61,15 +63,35 @@ plot_roc <- function(df){
       empirical = c('kbbq','raw')
     )) %>%
     ggplot(aes(FPR,sensitivity)) +
-    facet_grid(rows = vars(FalsePositiveRate), as.table = FALSE, 
-               margins = TRUE, labeller = rate_labeller) +
-    # geom_line(aes(color = factor(FalseNegativeRate, levels = c("raw",0,20,40,60,80,100)), group = FNR_FPR)) +
-    geom_line(aes(color = FalseNegativeRate, group = FNR_FPR)) +
+    # facet_grid(rows = vars(FalsePositiveRate), as.table = FALSE, 
+               # margins = TRUE, labeller = rate_labeller) +
+    facet_wrap(facets = vars(FalsePositiveRate), as.table = TRUE, 
+              labeller = rate_labeller) +
+    geom_line(aes(color = factor(FalseNegativeRate, levels = c("raw","kbbq",0,20,40,60,80,100)), group = FNR_FPR)) +
+    # geom_line(aes(color = FalseNegativeRate, group = FNR_FPR)) +
     scale_color_viridis_d('Variable\nSites\nFNR', option = 'viridis') +
     xlab("False Positive Rate") +
     ylab("True Positive Rate") +
-    theme(strip.text.y = element_text(angle = 0)) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    coord_fixed(ratio = max(df$FPR)) +
     geom_line(data = just_empirical, aes(color = FalseNegativeRate, group = FalseNegativeRate)) #add empirical on top of every plot
+}
+
+plot_single_roc <- function(df){
+  df %>%
+    unite("FNR_FPR", c(FalseNegativeRate,FalsePositiveRate), remove = FALSE) %>%
+    mutate(FalsePositiveRate = factor(FalsePositiveRate)) %>%
+    mutate(FalsePositiveRate = fct_collapse(FalsePositiveRate,
+                                            empirical = c('kbbq','raw')
+    )) %>%
+    ggplot(aes(FPR,sensitivity)) +
+    geom_line(aes(color = factor(FalseNegativeRate, levels = c("raw","kbbq",0,20,40,60,80,100)), group = FNR_FPR)) +
+    scale_color_viridis_d('Variable\nSites\nFNR', option = 'viridis') +
+    # scale_color_OkabeIto(name = 'Variable\n Sites\nFNR') +
+    xlab("False Positive Rate") +
+    ylab("True Positive Rate") +
+    theme(strip.text.y = element_text(angle = 0)) +
+    coord_fixed(ratio = max(df$FPR))
 }
 
 plot_sen_prec <- function(df){
@@ -163,11 +185,16 @@ theme_set(theme_minimal(base_size = 22, base_family = 'Times') +
 qualroc <- import_rtg_rocs(fpr,fpr,"QUAL") %>% mutate(FPR = FP/neg_sites)
 
 pdf("../figures/qualroc.pdf", width = 9, height = 7)
-qualroc %>% plot_roc() + xlim(0 , 2e-5) +
+qualroc %>% plot_roc() + #xlim(0 , 2e-5) +
   ggtitle("QUAL ROC")
 dev.off()
 
-pdf("../figures/qualmaxf.pdf", width = 9, height = 7)
+pdf("../figures/0fpr_roc.pdf", width = 9, height = 7)
+qualroc %>% filter(FalsePositiveRate == 0 | FalsePositiveRate == "kbbq" | FalsePositiveRate == "raw") %>% plot_single_roc() +
+  ggtitle("QUAL ROC")
+dev.off()
+
+    pdf("../figures/qualmaxf.pdf", width = 9, height = 7)
 qualroc %>% plot_roc_argmaxf(QUAL) +
   ggtitle("QUAL with Best F-statistic")
 dev.off()

@@ -1,0 +1,300 @@
+
+# FILE:./missing_sites/Makefile 
+
+
+GATKVARIANTS = ../gatk4/repeat-filter.vcf
+SCRIPTDIR = ~/bin/zypy/scripts
+FLTWITHREP = $(SCRIPTDIR)/filt_with_replicates.pl
+DIPLOIDIFY = $(SCRIPTDIR)/diploidify.py
+VCFTOFA = $(SCRIPTDIR)/vcf2fa.sh
+PLOTTREE = $(SCRIPTDIR)/plot_tree.R
+GATKFPR = $(SCRIPTDIR)/gatkfpr.py
+
+ALL = 01-first-11-scaffolds.vcf.gz 02-depth.vcf.gz \
+        04-near-indel.vcf.gz 05-biallelic.vcf.gz 06-repeat.vcf.gz \
+        07-replicate.vcf.gz 08-variable.vcf.gz
+
+TXTS = $(addsuffix .txt, $(basename $(basename $(ALL))))
+
+.DEFAULT: n_incomplete.txt
+
+.PHONY: pdfs
+
+%.vcf.gz: %.vcf
+	bgzip -c $< >$@
+
+%.vcf.gz.csi: %.vcf.gz
+	bcftools index $<
+
+%.txt: ../%.vcf.gz
+	bcftools view -e 'GT="."' -Ou $< | bcftools view -H -i'GT="./."' | wc -l > $@
+
+.SECONDARY:
+
+n_sites_missing.txt: $(TXTS)
+	parallel --tag -I{} 'cat {}' ::: $^ > $@
+
+# FILE:./tp_fn/Makefile 
+
+
+
+#VARIANTSDIR = ../../2018-07-24_callability/
+#REF = ../../e_mel_3/e_mel_3.fa
+#ALIGNMENT = $(VARIANTSDIR)/alignment.bam
+#REPEATBED = ../../liftover/e_mel_3_repeatmask.bed
+#RAWVARIANTS = $(VARIANTSDIR)/gatk/var-calls.vcf.gz
+#INREPEATS = $(VARIANTSDIR)/gatk/inrepeats.txt
+DNGCALLS = ../../dng/filter/goodsites.vcf
+
+SCRIPTDIR = ~/bin/zypy/scripts
+FLTWITHREP = $(SCRIPTDIR)/filt_with_replicates.pl
+DIPLOIDIFY = $(SCRIPTDIR)/diploidify.py
+VCFTOFA = $(SCRIPTDIR)/vcf2fa.sh
+PLOTTREE = $(SCRIPTDIR)/plot_tree.R
+CALLABILITYRES = $(SCRIPTDIR)/spiked_mutation_results.py
+
+ALL = 01-first-11-scaffolds.vcf.gz 02-depth.vcf.gz \
+	04-near-indel.vcf.gz 05-biallelic.vcf.gz 06-repeat.vcf.gz \
+	07-replicate.vcf.gz 08-variable.vcf.gz
+
+RESULTS = $(addsuffix .result, $(basename $(basename $(ALL))))
+FNRESULTS = $(addsuffix .fn.result, $(basename $(basename $(ALL))))
+TPRESULTS = $(addsuffix .tp.result, $(basename $(basename $(ALL))))
+
+results: fn.txt tp.txt
+
+.PHONY: results
+
+.SECONDARY:
+
+%.vcf.gz: %.vcf
+	bgzip -c $< >$@
+
+%.vcf.gz.csi: %.vcf.gz
+	bcftools index $<
+
+#Calls not in the callset but in DNGCALLS are FN
+%.fn.result: ../%.vcf.gz
+	bcftools view -H -T ^$< $(DNGCALLS) | wc -l > $@
+
+#Calls that match DNGCALLS are TPs
+%.tp.result: ../%.vcf.gz
+	bcftools view -H -T $(DNGCALLS) $< | wc -l > $@
+
+fn.txt: $(FNRESULTS)
+	parallel -I{} --tag 'cat {}' ::: $^ > $@
+
+tp.txt: $(TPRESULTS)
+	parallel -I{} --tag 'cat {}' ::: $^ > $@
+
+# FILE:./Makefile 
+
+
+VARIANTSDIR = ../gatk4/
+REF = ../e_mel_3/e_mel_3.fa
+REFDICT = $(basename $(REF)).dict
+RAWALIGNMENT = ../alignment.dedup.bam
+REPEATBED = ../liftover/e_mel_3_repeatmask.bed
+RAWVARIANTS = discoRes_k_31_c_3_D_100_P_3_b_0_coherent.vcf
+SCAFFOLDS = $(addprefix scaffold_,$(shell seq 1 11))
+SCAFFOLDEDVARIANTS = $(addsuffix .var-calls.vcf.gz, $(SCAFFOLDS))
+DATADIR = ../data/
+
+SCRIPTDIR = ~/bin/zypy/scripts
+FLTWITHREP = $(SCRIPTDIR)/filt_with_replicates.pl
+DIPLOIDIFY = $(SCRIPTDIR)/diploidify.py
+VCFTOFA = $(SCRIPTDIR)/vcf2fa.sh
+PLOTTREE = $(SCRIPTDIR)/plot_tree.R
+
+SAMPLENUMS := 1 2 3 4 5 6 7 8
+SAMPLEREPS := a b c
+SAMPLES := $(foreach NUM,$(SAMPLENUMS),$(addprefix M$(NUM),$(SAMPLEREPS)))
+SAMPLECMD := $(foreach SAM,$(SAMPLES),echo $(wildcard $(DATADIR)/*$(SAM)*/$(SAM)*.fastq | tr ' ' '\t' > $(SAM)_fof.txt))
+SAMPLEFOFS := $(addsuffix _fof.txt,$(SAMPLES))
+
+ALL = 01-first-11-scaffolds.vcf.gz 02-depth.vcf.gz \
+        04-near-indel.vcf.gz 05-biallelic.vcf.gz 06-repeat.vcf.gz \
+        07-replicate.vcf.gz 08-variable.vcf.gz
+
+all: $(ALL) num_variants.txt
+
+.SHELL: bash
+
+.PHONY: all disco
+
+%.vcf.gz: %.vcf
+	bgzip -c $< >$@
+
+%.vcf.gz.csi: %.vcf.gz
+	bcftools index $<
+
+%.vcf.gz.tbi: %.vcf.gz
+	bcftools index -t $<
+
+%.bam.bai: %.bam
+	samtools index $<
+
+.SECONDARY:
+
+.PRECIOUS:
+
+%_fof.txt:
+	echo $(wildcard $(DATADIR)/*$**/$**.fastq) $% |\
+	xargs -n1 > $@
+
+fof.txt: $(SAMPLEFOFS)
+	echo $^ | xargs -n1 > $@
+
+disco: fof.txt $(REF)
+	~/bin/DiscoSnp/run_discoSnp++.sh -r $< -T -G $(word 2, $^) -R
+
+disco_sample_names.txt: discoRes_read_files_correspondance.txt
+	sed 's/C_/G/; s/[[:space:]].*\(M[[:digit:]][abc]\).*/ \1/g' $< >$@
+
+#sorted.vcf.gz: $(RAWVARIANTS).gz disco_sample_names.txt
+#	bcftools reheader --samples $(word 2, $^) $< | \
+#	bcftools sort -m64G -Oz -o $@ -
+
+01-first-11-scaffolds.vcf.gz: $(RAWVARIANTS).gz disco_sample_names.txt $(REF).fai
+	bcftools reheader --samples $(word 2, $^) -f $(word 3, $^) $< | \
+	bcftools view -t scaffold_1,scaffold_2,scaffold_3,scaffold_4,scaffold_5,scaffold_6,scaffold_7,scaffold_8,scaffold_9,scaffold_10,scaffold_11 -Ou | \
+	bcftools sort -m 64G -Oz -o $@ -
+
+02-depth.vcf.gz: 01-first-11-scaffolds.vcf.gz 01-first-11-scaffolds.vcf.gz.csi
+	bcftools filter -i 'SUM(FORMAT/DP) <= 500' -O z -o $@ $<
+
+#03-excesshet.vcf.gz: 02-depth.vcf.gz 02-depth.vcf.gz.csi
+#	bcftools filter -i 'ExcessHet <= 40' -O z -o $@ $<
+
+#testing shows -g is applied last
+04-near-indel.vcf.gz: 02-depth.vcf.gz 02-depth.vcf.gz.csi
+	bcftools filter -g 50 -O z -o $@ $<
+
+05-biallelic.vcf.gz: 04-near-indel.vcf.gz 04-near-indel.vcf.gz.csi
+	bcftools view -m2 -M2 -v snps -O z -o $@ $<
+
+06-repeat.vcf.gz: 05-biallelic.vcf.gz $(REPEATBED) 05-biallelic.vcf.gz.csi
+	vcftools --gzvcf $< --exclude-bed $(word 2, $^) --remove-filtered-all --recode --recode-INFO-all --stdout | bgzip -c > $@
+
+07-replicate.vcf.gz: 06-repeat.vcf.gz 06-repeat.vcf.gz.csi
+	zcat $< | $(FLTWITHREP) -s -g 3 | bgzip -c > $@
+
+08-variable.vcf.gz: 07-replicate.vcf.gz
+	zcat $< | $(DIPLOIDIFY) -t vcf -v | bgzip -c > $@
+
+num_variants.txt: $(ALL)
+	parallel --tag -I{} "bcftools view -e 'GT=\".\"' -H {} | wc -l" ::: $(ALL) > $@
+
+
+
+# FILE:./fp/Makefile 
+
+
+GATKVARIANTS = ../01-first-11-scaffolds.vcf.gz
+CALLEDVARIANTS = ../08-variable.vcf.gz
+JOBNUMS=$(shell seq 1 100)
+VCFNUMS = $(addsuffix .vcf.gz, $(JOBNUMS))
+JOBCALLS=$(addprefix %/,$(VCFNUMS))
+
+SCRIPTDIR = ~/bin/zypy/scripts
+DIPLOIDIFY = $(SCRIPTDIR)/diploidify.py
+FPRFILT = $(SCRIPTDIR)/gatkfpr.py
+SHUF_LABELS = $(SCRIPTDIR)/label_permutation.R
+SHELL=bash
+DNGCALLS = ../../dng/filter/goodsites.vcf
+##########################################################
+
+ALL = 01-first-11-scaffolds.vcf.gz 02-depth.vcf.gz \
+        04-near-indel.vcf.gz 05-biallelic.vcf.gz 06-repeat.vcf.gz \
+        07-replicate.vcf.gz 08-variable.vcf.gz
+
+RESULTS = $(addsuffix .result, $(basename $(basename $(ALL))))
+RESFOLDERS = $(addsuffix /, $(basename $(basename $(ALL))))
+ALLVCFS = $(foreach folder, $(RESFOLDERS), $(addprefix $(folder), $(VCFNUMS)))
+
+default: all
+
+all: $(RESULTS)
+
+.PHONY: all default
+
+.DELETE_ON_ERROR:
+
+.INTERMEDIATE:
+
+.SECONDARY:
+
+#########################################################
+# Helper Rules
+
+%.vcf.gz.csi: %.vcf.gz
+	bcftools index $<
+
+#
+
+trees/:
+	mkdir -p $@
+
+trees/%.ped: trees/
+	echo "##PEDNG v1.0" > $@; echo -e "M\t.\t.\t0" | paste - <( $(SHUF_LABELS) ) >> $@
+
+$(RESFOLDERS):
+	mkdir -p $@
+
+vpath %.ped trees/
+
+$(ALLVCFS): | $(RESFOLDERS)
+	$(FPRFILT) -n 3 -v ../$(subst /,,$(dir $@)).vcf.gz -p trees/$(notdir $(basename $(basename $@))).ped | \
+	$(DIPLOIDIFY) -t vcf -v | bgzip > $@
+
+$(RESULTS): %.result : $(DNGCALLS) $(JOBCALLS)
+	rm -f $@; for f in $(wordlist 2,$(words $^),$^) ; do bcftools view -H -T ^$< $$f | wc -l >> $@; done
+
+#FP, FP/P (FDR)
+results.txt: $(RESULTS)
+	parallel -I{} --tag 'cat {} | awk "{x+=\$$1}END{print x,x/NR}"' ::: $^ > $@
+
+
+# FILE:./trees/Makefile 
+
+
+GATKVARIANTS = ../gatk4/repeat-filter.vcf
+SCRIPTDIR = ~/bin/zypy/scripts
+FLTWITHREP = $(SCRIPTDIR)/filt_with_replicates.pl
+DIPLOIDIFY = $(SCRIPTDIR)/diploidify.py
+VCFTOFA = $(SCRIPTDIR)/vcf2fa.sh
+PLOTTREE = $(SCRIPTDIR)/plot_tree.R
+GATKFPR = $(SCRIPTDIR)/gatkfpr.py
+
+ALL = 01-first-11-scaffolds.vcf.gz 02-depth.vcf.gz \
+        04-near-indel.vcf.gz 05-biallelic.vcf.gz 06-repeat.vcf.gz \
+        07-replicate.vcf.gz 08-variable.vcf.gz
+
+PDFS = $(addsuffix .pdf, $(basename $(basename $(ALL))))
+
+pdfs: $(PDFS)
+
+.PHONY: pdfs
+
+%.vcf.gz: %.vcf
+	bgzip -c $< >$@
+
+%.vcf.gz.csi: %.vcf.gz
+	bcftools index $<
+
+%.fa: ../%.vcf.gz
+	bcftools view -e 'GT="."' $< | $(VCFTOFA) | $(DIPLOIDIFY) -v >$@
+
+.SECONDARY:
+
+%.nwk: %.fa
+	export RXMLTMPDIR=$(shell mktemp -d --tmpdir=$(CURDIR) raxml_XXXXXX); \
+	raxml -T 8 -f a -s $< -n nwk -m ASC_GTRGAMMA -w $$RXMLTMPDIR --asc-corr=lewis -p 12345 -x 12345 -# 100 && \
+	cat $$RXMLTMPDIR/RAxML_bestTree.nwk >$@ &&\
+	rm -rf $$RXMLTMPDIR
+
+%.pdf: %.nwk
+	$(PLOTTREE) $< $@
+
+%.png: %.pdf
+	gs -sDEVICE=pngalpha -o $@ $<
