@@ -280,12 +280,14 @@ plot_sim_roc <- function(df){
     ylab("True Positive Rate") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     coord_fixed(ratio = max(df$FPR)) +
-    scale_color_OkabeIto(name = 'Calibration Method', use_black = T, drop = FALSE)
+    scale_color_OkabeIto(name = 'Calibration Method', use_black = T, drop = FALSE) +
+    ggtitle("QUAL ROC of Calls on Simulated Reads")
 }
 
 sim_qual_df <- import_sim_rocs("QUAL")
+pdf("../figures/sims_qualroc.pdf", width = 9, height = 7)
 plot_sim_roc(sim_qual_df)
-
+dev.off()
 #GQ roc doesn't show any differences.
 
 #sim_gq_df <- import_sim_rocs("GQ")

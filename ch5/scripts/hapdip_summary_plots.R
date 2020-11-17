@@ -386,7 +386,7 @@ sim_tsvs <- import_sim_tsvs()
 pdf("../figures/sims_sens_precision.pdf", width = 9, height = 7)
 sim_tsvs %>% ggplot(aes(precision, recall)) +
   geom_point(aes(color = CalibrationMethod), size = 3) +
-  ggtitle("Sensitivity and Precision of Calls from Simulated Data") +
+  ggtitle("Sensitivity and Precision of Calls\non Simulated Reads") +
   scale_x_continuous("Precision") +
   scale_y_continuous("Sensitivity") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
@@ -398,7 +398,8 @@ sim_tsvs %>%
   ggplot(aes(CalibrationMethod, f)) +
   geom_point(aes(color = CalibrationMethod), size = 3) +
   ylab("F-statistic") +
-  ggtitle("F-statistic of Calls from Simulated Data") +
+  xlab("Calibration Method") +
+  ggtitle("F-statistic of Calls on Simulated Reads") +
   scale_color_OkabeIto(name = 'Calibration Method', use_black = T, drop = FALSE)
 dev.off()
 

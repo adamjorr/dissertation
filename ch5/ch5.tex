@@ -149,10 +149,48 @@ Ultimately, this alters the sensitivity and precision of each dataset such that 
 \label{fig:vc_flt_f}
 \end{figure}
 
-%Simulated Reads
+%Simulated Reads results
+Each of the three tested recalibration methods had only a small effect on the precision and sensitivity of HaplotypeCaller (see Figure \ref{fig:sim_sens_precision} and Table \ref{table:sim_summary}). The Initial-calls calibration did not change the precision compared to the raw quality scores, but did slightly decrease the sensitivity of the caller. GATK calibration using the true known variable sites yielded an increase in precision and sensitivity while the reference-free method KBBQ yielded an increase in precision but a slight decrease in sensitivity. Overall, this lead to an increase in the F-statistic after GATK recalibration with the true known sites and a decrease in the F-statistic after GATK recalibration with initial calls as the known sites, with no change in F-statistic after KBBQ recalibration. The ROC curve on the QUAL field of the called variants does not clearly show one calibration method as better than the others, and each one has the best trade-off between false positive and true positive rate at different points along the ROC curve except the Initial-calls calibration, which is closer to the bottom right of the plot at all times. There was no discernable difference between datasets when the GQ score was used to create the ROC curve, so it is not shown.
+
+\begin{figure}
+\centering
+\includegraphics[width=.7\linewidth]{sims_sens_precision.pdf}
+\titlecaption{Sensitivity and Precision of Calls on Simulated Reads}{The sensitivity and precision of calls made using the raw data and after recalibration with 3 methods. See Table \ref{table:sim_summary} for values plotted.}
+\label{fig:sim_sens_precision}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=.7\linewidth]{sims_fstat.pdf}
+\titlecaption{F-statistic of Calls on Simulated Reads}{The F-statistic of calls made using the raw data and after recalibration with 3 methods. See Table \ref{table:sim_summary} for values plotted.}
+\label{fig:sim_sens_precision}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=.7\linewidth]{sims_qualroc.pdf}
+\titlecaption{ROC of Calls on Simulated Reads}{ROC curve on the QUAL score of the variants called by HaplotypeCaller on the uncalibrated simulated reads and after recalibration with 3 methods.}
+\label{fig:sim_qualroc}
+\end{figure}
 
 
-%
+\begin{table}
+\centering
+\begin{tabular}{r l l l l l}
+\toprule
+Calibration Method & TP & FP & Sensitivity & Precision & F-statistic \\
+\midrule
+Raw & 122308 & 189 & 0.98024 & 0.99846 & 0.98927\\ 
+GATK & 122311 & 188 & 0.98027 & 0.99847 & 0.98928\\ 
+Initial-calls & 122298 & 189 & 0.98016 & 0.99846 & 0.98923\\ 
+KBBQ & 122306 & 187 & 0.98023 & 0.99847 & 0.98927\\ 
+\bottomrule
+\end{tabular}
+\titlecaption{Variant Caller Performance on Simulated Data}{A summary of the performance of HaplotypeCaller on simulated data calibrated different ways. TP is the number of true positive calls and FP the number of false positive calls. Raw is the quality scores assigned by the simulator, GATK is recalibration using the known heterozygous sites, Initial-calls is recalibration after calling an initial set of variants, and KBBQ is recalibration with the reference-free recalibrator KBBQ. See Figure \ref{fig:sim_sens_precision} for a visual comparison.}
+\label{table:sim_summary}
+\end{table}
+
+
 
 \subsection{Variants Detected in \textit{E. melliodora}}
 
@@ -216,7 +254,16 @@ One limitation of this study is that is uses only a single dataset and only a sp
 
 Furthermore, this data is from a human-derived cell line, and protocols for DNA extraction and sequencing are fairly well-established. Additionally, the original base calling algorithm is likely tuned to work well with human-like data. All together, this means that while the effect of recalibration was not particularly pronounced in this dataset, base quality score recalibration may have a higher impact on data that is messier, contains more errors induced in sample preparation, or results from failed sequencing runs. In light of this, it seems that using the default-assigned base quality scores will offer superior performance unless one has a reason to suspect the data is of poor quality.
 
-%Talk about how BQSR actually made everything worse!!!
+% Simulated Data
+% Each of the three tested recalibration methods had only a small effect on the precision and sensitivity of HaplotypeCaller (see Figure \ref{fig:sim_sens_precision} and Table \ref{table:sim_summary}). The Initial-calls calibration did not change the precision compared to the raw quality scores, but did slightly decrease the sensitivity of the caller. GATK calibration using the true known variable sites yielded an increase in precision and sensitivity while the reference-free method KBBQ yielded an increase in precision but a slight decrease in sensitivity. Overall, this lead to an increase in the F-statistic after GATK recalibration with the true known sites and a decrease in the F-statistic after GATK recalibration with initial calls as the known sites, with no change in F-statistic after KBBQ recalibration. The ROC curve on the QUAL field of the called variants does not clearly show one calibration method as better than the others, and each one has the best trade-off between false positive and true positive rate at different points along the ROC curve except the Initial-calls calibration, which is closer to the bottom right of the plot at all times. There was no discernable difference between datasets when the GQ score was used to create the ROC curve, so it is not shown.
+
+The simulated reads similarly show that the effect of base quality score recalibration is fairly small. However, the simulator also assigned fairly well-calibrated scores to begin with, so there is not much room for improvement in those scores and many opportunities to make calibration worse. As shown in the previous chapter, using initial calls for recalibration does degrade the overall quality of the calibration. This is consistent with these results showing that HaplotypeCaller performs worse on reads recalibrated using GATK with a set of initial calls. However, when the set of known sites is the true set of variable sites in the data, GATK recalibration does slightly improve the precision and sensitivity of HaplotypeCaller. At the same time, reference-free recalibration with KBBQ increases precision but slightly decreases sensitivity.
+
+Overall, these simulations show that GATK recalibration slightly increases HaplotypeCaller performance if the set of variable sites is complete and has no false positives, even if the starting data is fairly well-calibrated. However, if the set of variable sites is not complete, GATK recalibration will cause HaplotypeCaller performance to suffer slightly. Thus, if there is a risk that the set of variable sites is inaccurate, GATK recalibration should not be used. At the same time, raw quality scores will provide good performance as long as they are fairly well-calibrated to start. These simulations also show that even with well-calibrated input data, the reference-free recalibration method KBBQ doesn't significantly degrade the performance of HaplotypeCaller.
+
+%
+
+
 
 %Speculate about when BQSR might actually be useful!! More work is needeD!!!
 
@@ -231,10 +278,6 @@ Using the same calling and filtering parameters as those used in \cite{orr_phylo
 Additionally, the number of variants after filtering that appear in the confident set identified in the previous study increased from 30 to 34. This is identical to the number detected using the raw reads. However, in contrast to the results from the simulated data, the number of estimated false positive calls decreased as well in the KBBQ recalibrated data, falling from 55.71 to 35.54 after filtering and from 1033.18 to 911.46 before filtering. The variants called using KBBQ recalibrated data have slightly fewer false positive calls than the variants called using the raw data, with the GATK method yielding the most false positives. This is consistent with \cite{ni_improvement_2016} and \cite{li_improving_2011} who find that better quality score calibration reduces the number of false positive calls. Thus, using KBBQ to recalibrate the reads before calling seems to have substantially increased both the sensitivity and the precision of the variant calling pipeline compared to GATK's BaseRecalibrator and using raw quality values.
 
 After all filters were applied, the pipeline yielded 106 mutations with an estimated 36 false positives and 34 previously-estimated true positives. This leaves approximately 36 positive variants that were not in the set of previously identified variants. This is an approximately 2.8 times increase from that same estimate of 13 inferred with the same pipeline from \cite{orr_phylogenomic_2020}, except using KBBQ rather than BaseRecalibrator. It is a 2 times increase from the same estimate of 18 using the same pipeline but uncalibrated reads. While this is an estimate based on the false positive rate and so cannot be used to distinguish between previously unidentified true variants and false positives, it shows how the decrease in false positive rate and increase in number of calls using KBBQ recalibrated reads improves the overall ability of the variant calling pipeline to reveal true mutations.
-
-% Why might the empirical results differ from the simulated ones?
-
-% TODO: run the pipeline on the raw reads and see what the difference is (ie not use GATK calibration)
 
 \section{Conclusion}
 
