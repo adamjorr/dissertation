@@ -250,5 +250,44 @@ import_bcftools_rocs <- function(fnr, fpr, type){
     filter(FalsePositiveRate != 100)
 }
 
+# ------- Simulated Data ROC Plots ----------
+sim_neg_sites <- 5013478 - 125000
 
+import_sim_rocs <- function(type){
+  datanames <- c("ngm","ngm.recal","initial-calls.recal","kbbq-ngm.recal")
+  nicenames <- c("Raw","GATK","Initial-calls","KBBQ")
+  roc_files <- paste0("../data/sims/",datanames,".vcf.gz_",type,".snp_roc.tsv.gz")
+  dfs <- map(roc_files, read_tsv, comment = "#",
+             col_names = c(
+               type,"TPb","FP","TPc", "FN", "precision", "sensitivity", "f"))
+  names(dfs) <- nicenames
+  bind_rows(dfs, .id = 'CalibrationMethod') %>%
+    group_by(CalibrationMethod) %>%
+    mutate(CalibrationMethod = factor(CalibrationMethod, levels = nicenames)) %>%
+    mutate(FPR = FP/sim_neg_sites)
+}
+
+
+plot_sim_roc <- function(df){
+  df %>%
+    ggplot(aes(FPR,sensitivity)) +
+    # facet_grid(rows = vars(FalsePositiveRate), as.table = FALSE, 
+    # margins = TRUE, labeller = rate_labeller) +
+    # facet_wrap(facets = vars(CalibrationMethod), as.table = TRUE) +
+    # geom_line(aes(color = CalibrationMethod)) +
+    geom_line(aes(color = CalibrationMethod)) +
+    xlab("False Positive Rate") +
+    ylab("True Positive Rate") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    coord_fixed(ratio = max(df$FPR)) +
+    scale_color_OkabeIto(name = 'Calibration Method', use_black = T, drop = FALSE)
+}
+
+sim_qual_df <- import_sim_rocs("QUAL")
+plot_sim_roc(sim_qual_df)
+
+#GQ roc doesn't show any differences.
+
+#sim_gq_df <- import_sim_rocs("GQ")
+#plot_sim_roc(sim_gq_df)
 

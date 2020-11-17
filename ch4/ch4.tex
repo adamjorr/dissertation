@@ -55,7 +55,7 @@ The algorithm takes reads aligned to a reference and a database of potentially v
 The algorithm proceeds in 3 phases.
 In the first phase, the algorithm compares each read to the aligned reference. Potentially variable sites are ignored and mismatches from the reference sequence and non-mismatches are counted. The numbers of matching and mismatching bases are categorized according to the model covariates, which are: read group, assigned quality score, sequencing cycle, and the base identity along with the identity of the previous base (the base context).
 % Phase 2 - Train a hierarchical model.
-In the second phase, a bayesian hierarchical model is trained with the count data. Using a normal distribution of the mean probability of error as a prior, the \textit{maximum a posteriori} (MAP) quality score of the read group is calculated assuming the errors are binomially distributed. That is,
+In the second phase, a bayesian hierarchical model is trained with the count data. Using a normal distribution of the mean probability of error as a prior, the \textit{maximum a posteriori} (MAP) quality score of the read group is calculated assuming the errors are binomially distributed. The estimated error probability for each read group $\hat{Q}_{rg}$ can be written in terms of the binomial probability mass function $\mathcal{B}$ with error probability $Q_{rg}$ and number of observations $\operatorname{Observations}_{rg}$ and the normal probability density function $\mathcal{N}$ with standard deviation of 1 around the mean estimate of the quality score for the entire dataset, $\bar{Q}$
 \begin{align}
 \hat{Q}_{rg} &= \operatorname{argmax}_{Q_{rg}} P(Q_{rg}|\operatorname{Errors}_{rg}) \\
 &= \operatorname{argmax}_{Q_{rg}} P(\mathcal{B}(\operatorname{Errors}_{rg} | \operatorname{Observations}_{rg}, Q_{rg}) \times P(\mathcal{N}(Q_{rg} | \bar{Q}))
@@ -67,7 +67,15 @@ In turn, this score is used as the prior for calculating the \textit{maximum a p
 \Delta Q_{\operatorname{context}} &= \hat{Q}_{\operatorname{context}} - \hat{Q}_{\operatorname{assigned\:quality\:score}} \\
 Q_{\operatorname{recalibrated}} &= \hat{Q}_{\operatorname{assigned\:quality\:score}} + \Delta Q_{\operatorname{cycle}} + \Delta Q_{\operatorname{context}}
 \end{align}
-In the third phase, the quality score of each read is adjusted based on the four covariates for each base in the read according to values calculated in the previous phase.
+In the third phase, the quality score of each read is adjusted based on the four covariates for each base in the read according to values calculated in the previous phase. See Figure \ref{fig:recal_explain} for a visual example.
+
+\begin{figure}
+\centering
+	\includegraphics[width = \textwidth]{recalibration_explainer.pdf}
+	\titlecaption{Base Quality Score Recalibration Example}{An example of two bases that were assigned identical quality scores. Here, the read group has an estimated quality of 24 and the assigned quality score in that read group has an estimated quality of 30. The estimated quality of bases with the same context as the first base is 31 while the estimated quality of bases with the same cycle is 28. This results in an overall estimated quality score of 29. Despite having the same read group and assigned score, because of the difference in context and cycle the second base is assigned a different score.}
+	\label{fig:recal_explain}
+\end{figure}
+
 
 % How much does BQSR help?
 BQSR improves quality score calibration in many cases, especially when there is moderate sequencing depth and the database of variable sites is nearly complete. %todo : cite
@@ -95,7 +103,8 @@ The methods of \cite{zook_synthetic_2012} and \cite{ni_improvement_2016} use syn
 Crucially, these methods require a reference and possibly other information to recalibrate reads that may not be available.
 
 % kbbq
-To effectively recalibrate base quality scores with as little auxiliary information as possible, I present \texttt{kbbq}, a software package to recalibrate quality scores of whole genome sequencing data without a reference or database of variable sites. The only required input is the set of reads to be recalibrated. Rather than excluding variation and comparing to the reference like GATK does, \texttt{kbbq} uses k-mer subsampling to find likely errors. Once the number of errors and nonerrors are counted and categorized according to their covariates, it uses the same model GATK uses to recalibrate the reads. I show how simulated false negatives and false positives affect GATK's ability to recalibrate reads and compare GATK calibration to \texttt{kbbq}.
+To effectively recalibrate base quality scores with as little auxiliary information as possible, I present \texttt{kbbq}, a software package to recalibrate quality scores of whole genome sequencing data without a reference or database of variable sites. The only required input is the set of reads to be recalibrated. Rather than excluding variation and comparing to the reference like GATK does, \texttt{kbbq} uses k-mer subsampling to find likely errors. Once the number of errors and nonerrors are counted and categorized according to their covariates, it uses the same model GATK uses to recalibrate the reads. Here, I show that this difference in how \texttt{kbbq} and GATK detect sequencing errors impacts the resultant base quality scores and that \texttt{kbbq} produces superior calibrations in a variety of scenarios.
+
 \section{Methods}
 	% \item Error correction algorithms
 \texttt{kbbq} performs BQSR by adjusting how errors in the dataset are discovered.
@@ -158,20 +167,32 @@ Notably, if $\alpha$ is the recommended value of $\frac{7}{\operatorname{Coverag
 To test the performance of \texttt{kbbq}, I reanalyzed the synthetic diploid CHM1-CHM13 dataset from \cite{li_synthetic-diploid_2018}. Like other benchmarking datasets, this dataset includes a BED file describing confident regions in which the genotype of any site that differs from homozygous reference within those regions are included in a VCF file. For the purposes of this work, I assume these confident regions and associated VCF entries are correct and represent the true genotype of the sequenced sample.
 
 This dataset was specifically designed to study the impact of deep sequencing on variant calling and has a coverage of approximately 45x. Thus, the affect of sequence specific errors and other non-random biases in sequencing should be pronounced in this data.
-The dataset was constructed by adding equal concentrations of DNA of CHM1 and CHM13 human complete hydatidiform mole cell lines and sequencing the mixture. These moles are formed when a sperm combines with an egg containing no nucleus; the sperm then undergoes mitosis to generate a completely homozygous cell mass. They are effectively haploid, and it is significantly easier to genotype a haploid cell than a diploid one. Thus, the mixture simulates a diploid human cell but the genotype of each "haplotype" is known. This means there should be very few, if any, errors in the declared genotypes included with the data. This is what \cite{li_synthetic-diploid_2018} find when validating their data as well.
+The dataset was constructed by adding equal concentrations of DNA of CHM1 and CHM13 human complete hydatidiform mole cell lines and sequencing the mixture. These moles are formed when a sperm combines with an egg containing no nucleus; the sperm then undergoes mitosis to generate a completely homozygous cell mass. They are effectively haploid, and it is significantly easier to genotype a haploid cell than a diploid one. Thus, the mixture simulates a diploid human cell but the genotype of each haplotype is known. This means there should be very few, if any, errors in the declared genotypes included with the data. This is what \cite{li_synthetic-diploid_2018} find when validating their data as well.
 
 %new paragraph
-To measure the performance of \texttt{kbbq} and compare to GATK's BaseRecalibrator and ApplyBQSR tools, I subset the full dataset to only reads aligned on Chromosome 1 and overlapping the BED of confident regions using the samtools view command \parencite{li_sequence_2009}. I then used the samtools fixmate and view commands to remove any singleton reads. I then ran \texttt{kbbq} on the dataset with the options \texttt{-\phantom{}-use-oq -g 214206308 -a .15}. I also ran GATK's BaseRecalibrator with the provided variant data as the known sites file and the \texttt{-\phantom{}-use-original-qualities} flag set. I then used the ApplyBQSR tool with the \texttt{-\phantom{}-use-original-qualities} flag to recalibrate the input file. I then compared the two recalibrated files by running the BaseRecalibrator tool again with the same options on both output datasets and using GATK's AnalyzeCovariates tool.
+To measure the performance of \texttt{kbbq} and compare to GATK's BaseRecalibrator and ApplyBQSR tools, I subset the full dataset to only reads aligned on Chromosome 1 and overlapping the BED of confident regions using the samtools view command \parencite{li_sequence_2009}. I then used the samtools fixmate and view commands to remove any singleton reads. I then ran \texttt{kbbq} on the dataset with the options \texttt{-\phantom{}-use-oq -g 214206308 -a .15}. I also ran GATK's BaseRecalibrator with the provided variant data as the known sites file and the \texttt{-\phantom{}-use-original-qualities} flag set. I then used the ApplyBQSR tool with the \texttt{-\phantom{}-use-original-qualities} flag to recalibrate the input file. The \texttt{-\phantom{}-use-original-qualities} flag is appropriate here because the data has already been recalibrated and the original assigned quality scores are stored in the OQ tag on each of the reads. This flag tells GATK to use and recalibrate those quality scores, rather than using the scores that are already present in the QUAL field for the read.
 
-%new paragraph
+I then compared the two recalibrated files by running the BaseRecalibrator tool again on both output datasets. In this invocation of BaseRecalibrator, \texttt{-\phantom{}-use-original-qualities} was not set as the quality scores in the QUAL field of the recalibrated reads are the quality scores calculated using the models trained above. I then used GATK's AnalyzeCovariates tool to create CSV files containing the number of errors for each assigned quality scores and plotted these values.
+
+% Subsampling of database of variable sites - move this to Ch5
 In order to determine how misspecification of the database of variable sites affects the calibration of GATK's BQSR procedure, I simulated datasets with various levels of false negative and false positive variants. In this case, false negative variants in the database of variable sites causes a site that should be ignored to not be ignored, greatly increasing the number of bases that GATK classifies as sequencing errors. On the other hand, false positive variants remove a site from GATK classification, so the affect is likely to be small except for large false positive rates. To create each false negative dataset, an appropriate number of sites from the VCF were randomly sampled with BCFTools and the shuf program. To create each false positive dataset, all sites from the VCF were extracted in BED format with the BCFTools query command, then subtracted from the BED of confident regions with bedtools subtract \parencite{quinlan_bedtools_2010}. The appropriate number of sites were then sampled with the shuf program and appended to the sites from the VCF to generate the BED file of all sites to exclude. These files were then provided as input to GATK's BaseRecalibrator tool and calibration was evaluated with GATK's AnalyzeCovariates tool.
-%new paragraph
 
-% GATK method test
-To simulate a situation where a researcher has sequenced a non-model organism, is using a reference that may not closely match the sample, and doesn't have a database of variable sites, I aligned the test data to the chimp reference genome \parencite{waterson_initial_2005} using NextGenMap \parencite{sedlazeck_nextgenmap_2013}.
+% GATK chimp test
+To simulate a situation where a researcher has sequenced a non-model organism, is using a reference that may not closely match the sample, and doesn't have a database of variable sites, I aligned the test data to the chimp reference genome \parencite{waterson_initial_2005} using NextGenMap \parencite{sedlazeck_nextgenmap_2013}. Prior to realignment, the original qualities in the OQ tag were placed into the QUAL field using GATK's RevertBaseQualityScores tool to ensure the raw assigned quality scores were used to align the reads.
+
 In this situation, GATK recommends calling an initial set variants with high confidence and using these variants as the database of variable sites. %todo: give GATK parameters, etc used.
+To see how this affects the results of GATK's BQSR, I called variants using HaplotypeCaller with the \texttt{-stand-call-conf 50} argument. The default value for this argument is 40, and is a phred-scaled confidence threshold for reporting a variant, so with this flag the model's confidence in the emitted calls should be very high. I then used the resulting variants as the database of variable sites with BaseRecalibrator to train a recalibration model. Here, the \texttt{-\phantom{}-use-original-qualities} flag was not used as the qualities in the QUAL field for each read were already the raw uncalibrated scores.
 
-To see how this affects the results of GATK's BQSR, I did so using HaplotypeCaller with the \texttt{-stand-call-conf 50} argument. The default value for this argument is 40, and is a phred-scaled confidence threshold for reporting a variant. I then used the resulting variants with BaseRecalibrator to train a recalibration model. To evaluate this model using the truth set, I used the model to recalibrate the reads as they were aligned to the human reference. Thus, the sole difference between this recalibration method and the standard using the correct reference and database of variable sites is the trained model; the realignment has no impact on benchmarking the calibration. I then used AnalyzeCovariates as above to obtain the calibration data.
+To evaluate this model using the truth set, I used the model and ApplyBQSR to recalibrate the reads as they were aligned to the human reference. Here, the \texttt{-\phantom{}-use-original-qualities} flag was used, as the quality scores that represent the original assigned scores for the reads (the same scores used to train the model) are given in the OQ tag rather than the QUAL field. Since the recalibration was performed after the reads were already aligned to the human reference, the sole difference between this recalibration method and the standard using the correct reference and database of variable sites is the trained model; the alignment has no impact on benchmarking the calibration. I then used AnalyzeCovariates as above to obtain the calibration data and plot it.
+
+% Simulated Reads
+As an additional test of KBBQ's performance, particularly in situations where the user has no quality reference, I simulated reads from the unscaffolded contigs of the initial release (v1.0) of the \textit{Eucalyptus grandis} genome, SRA accession AUSX00000000.1. GATK recommends using at least 100 million base pairs for calibration, so I aimed to simulate twice that many bases. To simulate a situation where a user has a medium-coverage dataset of approximately 20X coverage, I therefore simulated a haploid genome of 5 million base pairs by randomly sampling contigs from the full set of \textit{E. grandis} contigs using shuf, awk, and the samtools faidx program.
+
+I then simulated heterozygous sites in the genome using simuG \parencite{yue_simug_2019} with a transition/transversion ratio of 2 to mirror the approximate ratio of mutations in real eucalypts. I simulated 125,000 SNPs in the reference to reflect the large level of heterozygosity in eucalypts \parencite{kulheim_comparative_2009}. I then concatenated the subsampled reference and reference containing the SNPs, which I used to simulate 101-bp long paired end reads using ART \parencite{huang_art_2012} using the HiSeq 2500 error profile, a mean fragment length of 300, a fragment length standard deviation of 20, and a depth of coverage of 20. Since this concatenated genome is twice the size as the haploid genome, at 20 fold coverage it would yeild approximately 200 million base-pairs of sequence. I then aligned the simulated reads to the genome with NextGenMap \parencite{sedlazeck_nextgenmap_2013}.
+
+This reflects a scenario where a researcher sequences a highly heterozygous individual, assembles contigs, and aligns the sequenced reads back to the assembly. However, in this case the locations of all heterozygous sites are known. To compare the performance of KBBQ and GATK recalibration, I built the recalibration model with GATK BaseRecalibrator using the true location of all the heterozygous sites and applied the model with with GATK ApplyBQSR, both without the \texttt{-\phantom{}-use-original-qualities} flag since the assigned quality scores were present in the QUAL field of the read. Since most researchers don't have knowledge of all the true variable sites in the data, I also repeated this procedure but using the initial calls made by HaplotypeCaller with the \texttt{-\phantom{}-stand-call-conf} parameter set to 50, which makes HaplotypeCaller emit only variants it is highly confident in. I then ran KBBQ using a k-mer size of 32 and a genome length of 5 million to recalibrate the reads. Finally, I used BaseRecalibrator again and GATK's AnalyzeCovariates tool with the CSV output option to check the calibration of each of the four recalibrated alignments.
+
+%
 
 Scripts to replicate the above analyses are available in Appendix \ref{ch:kbbq_plot_code}.
 
@@ -203,7 +224,7 @@ False Positive Rate & RMSE \\
 \label{table:fpr}
 \end{table}
 
-I also simulated different databases of variable sites with differing false negative rates and similarly used it to recalibrate my dataset. In these datasets, the false positive rate is 0\%. The plotted calibration and RMSE of the recalibrated data is shown in figure \ref{figure:fnr} and table \ref{table:fnr}. As the false negative rate increases, the degree of miscalibration also steadily increases.
+I also simulated different databases of variable sites with differing false negative rates and similarly used it to recalibrate the CHM1-CHM13 data. In these datasets, the false positive rate is 0\%. The plotted calibration and RMSE of the recalibrated data is shown in figure \ref{figure:fnr} and table \ref{table:fnr}. As the false negative rate increases, the degree of miscalibration also steadily increases.
 
 \begin{figure}
 	\centering
@@ -292,17 +313,37 @@ Raw & 4.05 \\
 \label{table:comparison}
 \end{table}
 
-% \begin{outline}	
-	% - do this for CH3 
-	% \item Simulate downstream effect of FP and FN on variant quality; perhaps can do this with F-score - this should be done for CH3
-	% \item Perhaps look at depth vs. variant quality to see if BQSR helps more in low-coverage scenarios - this should be done for CH3
-	% \item Application
-	% \begin{outline}
-	% 	\item Describe Eucalyptus data
-	% 	\item Describe structure in data that enables estimating the false positive and false negative rate
-	% 	\item Recalibrate reads with \texttt{kbbq} instead of GATK BQSR and see how variant FPR and FNR change.
-	% \end{outline}
-% \end{outline}
+The resulting calibration of each recalibration method applied to the simulated data is shown in Figure \ref{fig:sim_comparison}. The raw data as simulated is fairly well-calibrated and almost all quality scores are on the 1-to-1 line. GATK recalibration with an initial callset caused calibration errors in high scoring bases. GATK recalibration caused a large calibration error for bases assigned a score of 20, which contained very few errors. However, there were also relatively few bases assigned a score of 20, as seen in Figure \ref{fig:sim_qual_counts}. The errors are summarized in Table \ref{table:sim_comparison}; KBBQ has the lowest RMSE, while GATK calibration using an initial HaplotypeCaller callset has the highest RMSE.
+
+\begin{figure}
+\centering
+\includegraphics[width = .6\textwidth]{sim_comparison.pdf}
+\titlecaption{Comparison of Calibration Methods on Simulated Data}{Plot of calibration errors before and after recalibrating reads simulated with ART. Raw is the unmodified simulated quality scores. GATK is the result of using BaseRecalibrator and ApplyBQSR using the set of true simulated variants as the known sites file. Initial-calls is the result of using BaseRecalibrator and ApplyBQSR but using an initial HaplotypeCaller callset rather than the true set of variants. KBBQ is the result of using KBBQ, a reference-free recalibration method. Note that the raw calibration lies almost all on the 1-to-1 line, meaning the data is already fairly well-calibrated.}
+\label{fig:sim_comparison}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width = .6\textwidth]{sim_qual_counts.pdf}
+\titlecaption{Quality Score Distribution of Recalibrated Simulated Data}{Plot of the counts of each quality score in each dataset recalibrated by different methods. Raw is the unmodified simulated quality scores. GATK is the result of using BaseRecalibrator and ApplyBQSR using the set of true simulated variants as the known sites file. Initial-calls is the result of using BaseRecalibrator and ApplyBQSR but using an initial HaplotypeCaller callset rather than the true set of variants. KBBQ is the result of using KBBQ, a reference-free recalibration method. Most quality scores are above 30, and all the recalibration methods yield a distribution near that mode.}
+\label{fig:sim_qual_counts}
+\end{figure}
+
+\begin{table}
+\centering
+\begin{tabular}{r l}
+\toprule
+Calibration Method & RMSE \\
+\midrule
+Raw & 1.06 \\
+GATK & 4.40 \\
+Initial-calls & 4.54 \\
+KBBQ & 0.93 \\
+\bottomrule
+\end{tabular}
+\titlecaption{Errors of Different Calibration Methods on Simulated Data}{Root mean squared error of quality score for simulated reads recalibrated using different methods. Raw is the unmodified simulated quality scores. GATK is the result of using BaseRecalibrator and ApplyBQSR using the set of true simulated variants as the known sites file. Initial-calls is the result of using BaseRecalibrator and ApplyBQSR but using an initial HaplotypeCaller callset rather than the true set of variants. KBBQ is the result of using KBBQ, a reference-free recalibration method. See Figure \ref{fig:sim_comparison} for a visualization of the calibration errors.}
+\label{table:sim_comparison}
+\end{table}
 
 \section{Discussion}
 \label{sec:kbbq_discussion}
@@ -319,9 +360,19 @@ This suggests that an effect not captured in the simulated data was present in t
 
 As the chimp-aligned calibration shows, GATK BQSR struggles on real data from non-model organisms. False negatives are likely to be numerous in almost all but the most well-studied samples \parencite{bobo_false_2016}, and false positives are similarly likely when using poor quality, draft reference genomes that cause alignment errors. This means in most datasets, while its performance may be acceptable if the false negative and false positive rate are sufficiently low, GATK BaseRecalibrator is not the best recalibration method. This is shown in Figure \ref{figure:comparison}, which shows \texttt{kbbq} performing nearly as well as GATK BQSR with perfect knowledge of variable sites. However, \texttt{kbbq} doesn't use any reference or any variant site information to do recalibration. \texttt{kbbq} also performs much better than GATK's recommended procedure when a database of variable sites is not available, as shown in the Chimp-GATK calibration.
 
+Recalibration of the simulated reads shows that KBBQ is able to recalibrate reads even if they are already well-calibrated without severely damaging the calibration of the quality scores. In contrast, using GATK even with an accurate database of variable sites introduces additional error in quality score calibration to the reads, with both GATK-based methods having much higher RMSE than the raw quality scores. Additionally, even though the reads were already fairly well-calibrated, KBBQ recalibration confers a slight improvement to the RMSE of the quality scores. All methods yielded quality scores near 38, the mode of the raw quality data.
+
+% While there is a large spike in calibration error for bases assigned a score of 20, most of the data is assigned a score around 38, which is the mode of the raw data. This spike is a large contributor to the RMSE, but doesn't represent a very significant difference to the overall quality of the calibration. However, miscalibration in bases with quality scores between 32 and 40 are likely very important for the overall quality of the calibration, since most bases are assigned scores in that range. In this range, all calibration methods except GATK using intial variant calls were fairly close.
+
+
 \section{Conclusion}
 
-Base quality score recalibration is an important procedure to ensure base quality scores are accurate before variant calling. However, the most popular method for doing BQSR is not easy to do if the sequenced organism is a non-model organism. I simulated sets of variable sites with varying false positive and false negative rates to use with BQSR. While it seems the simulated false positives are somewhat different from those that appear in real datasets, it is clear that false negatives severely reduce the quality of the calibration using GATK's method. I developed the software tool \texttt{kbbq} to recalibrate base quality scores without a reference or database of variable sites to overcome these deficiencies. Since it doesn't use a database of variable sites or a reference, the quality of these resources is immaterial to the quality of the resulting calibration. Finally, I emulated GATK's procedure for calibration when a database of variable sites is unavailable by aligning benchmark data to the chimp genome and calling variants to use as the database of variable sites. This method produces a calibration much worse than \texttt{kbbq}. Thus, when a database of variable sites or reference is unavailable or of poor quality, \texttt{kbbq} is an effective method for base quality score recalibration.
+Base quality score recalibration is an important procedure to ensure base quality scores are accurate before variant calling. However, the most popular method for doing BQSR is not easy to do if the sequenced organism is a non-model organism. I developed the software tool \texttt{kbbq} to recalibrate base quality scores without a reference or database of variable sites to overcome these deficiencies. Since it doesn't use a database of variable sites or a reference, the quality of these resources is immaterial to the quality of the resulting calibration.
+
+To evaluate KBBQ, I emulated GATK's procedure for calibration when a database of variable sites is unavailable by aligning a synthetic diploid human benchmarking dataset to the chimp genome and calling variants to use as the database of variable sites. This method produces a calibration worse than \texttt{kbbq}. I further simulated reads from a draft assembly to simulate sequencing of a highly heterozygous non-model organism. Though the simulated data was fairly well-calibrated, GATK calibration with perfect knowledge of the heterozygous sites and using an initial set of calls introduced more error into the quality score calibration than was in the original data while KBBQ recalibration slightly reduced it. Thus, when a database of variable sites or reference is unavailable or of poor quality, \texttt{kbbq} is an effective method for base quality score recalibration.
+
+%hapdip stuff that needs to be moved to ch5
+I simulated sets of variable sites with varying false positive and false negative rates to use with BQSR. While it seems the simulated false positives are somewhat different from those that appear in real datasets, it is clear that false negatives severely reduce the quality of the calibration using GATK's method.
 
 \printbibliography[segment=\therefsegment]{}
 

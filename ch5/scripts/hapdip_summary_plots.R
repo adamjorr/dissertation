@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
 library(tidyverse)
+library(colorblindr)
 
 # --- Functions to get file paths ---
 
@@ -350,7 +351,59 @@ fltdf %>%
   coord_fixed(ratio = 1)
 dev.off()
 
+# ---- Simulated Data Summaries -----
+get_sim_f <- function(df){
+  df %>%
+    group_by(CalibrationMethod) %>%
+    mutate(recall = TPc / (TPc + FN)) %>%
+    mutate(precision = TPc / (TPc + FP)) %>%
+    mutate(f = 2 * precision * recall / (precision + recall))
+}
 
+import_sim_tsvs <- function(){
+  datanames <- c("ngm","ngm.recal","initial-calls.recal","kbbq-ngm.recal")
+  nicenames <- c("Raw","GATK","Initial-calls","KBBQ")
+  summary_files <- paste0("../data/sims/",datanames,".vcf.gz.summary.txt")
+  
+  dfs <- map(summary_files, read_tsv,
+             col_names = c("mode","type","operator","value"))
+  names(dfs) <- nicenames
+  
+  fnr_var <- sym('%FNR')
+  fdr_var <- sym('%FDR')
+  bind_rows(dfs, .id = 'CalibrationMethod') %>%
+    pivot_wider(names_from = operator, values_from = value) %>%
+    rename(FNR = all_of(fnr_var)) %>%
+    rename(FDR = all_of(fdr_var)) %>%
+    mutate(FDR = FDR/100) %>%
+    mutate(FNR = FNR/100) %>%
+    mutate(CalibrationMethod = factor(CalibrationMethod, levels = nicenames)) %>%
+    only_snps() %>%
+    get_sim_f()
+}
 
+sim_tsvs <- import_sim_tsvs()
+pdf("../figures/sims_sens_precision.pdf", width = 9, height = 7)
+sim_tsvs %>% ggplot(aes(precision, recall)) +
+  geom_point(aes(color = CalibrationMethod), size = 3) +
+  ggtitle("Sensitivity and Precision of Calls from Simulated Data") +
+  scale_x_continuous("Precision") +
+  scale_y_continuous("Sensitivity") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_color_OkabeIto(name = 'Calibration Method', use_black = T, drop = FALSE)
+dev.off()
 
+pdf("../figures/sims_fstat.pdf", width = 9, height = 7)
+sim_tsvs %>%
+  ggplot(aes(CalibrationMethod, f)) +
+  geom_point(aes(color = CalibrationMethod), size = 3) +
+  ylab("F-statistic") +
+  ggtitle("F-statistic of Calls from Simulated Data") +
+  scale_color_OkabeIto(name = 'Calibration Method', use_black = T, drop = FALSE)
+dev.off()
 
+sim_table <- sim_tsvs %>%
+  select(CalibrationMethod, TPc, FP, recall, precision,f) %>%
+  rename(TP = TPc, Sensitivity = recall, Precision = precision, "F-statistic" = f)
+
+write_tsv(sim_table, "../tables/sims_summary.txt")

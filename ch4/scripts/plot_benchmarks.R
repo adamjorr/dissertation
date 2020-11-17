@@ -1,5 +1,7 @@
 #!/usr/bin/env Rscript
 library(tidyverse)
+library(colorblindr)
+
 
 # --- Functions to get file paths ---
 
@@ -274,13 +276,59 @@ pdf('../figures/comparison.pdf', width = 9, height = 7)
 plot_comparison_dfs(comparison_df)
 dev.off()
 
+# --- Simulated Data ---
+ngm_before_df <- get_gatk_csv_file('ngm') %>% read_csv() %>% filter(CovariateName == 'QualityScore' & Recalibration == 'Before')
+ngm_after_df <- get_gatk_csv_file('ngm') %>% read_csv() %>% filter(CovariateName == 'QualityScore' & Recalibration == 'After')
+kbbq_ngm_df <- get_gatk_csv_file('kbbq-ngm') %>% read_csv() %>% filter(CovariateName == 'QualityScore' & Recalibration == 'After')
+bootstrap_df <- get_gatk_csv_file('initial-calls') %>% read_csv() %>% filter(CovariateName == 'QualityScore' & Recalibration == 'After')
+
+
+#calibration
+ngm_df <- bind_rows(list(Raw = ngm_before_df, GATK = ngm_after_df, "Initial-calls" = bootstrap_df, KBBQ = kbbq_ngm_df), .id = 'CalibrationMethod') %>%
+  rename(PredictedQuality = CovariateValue) %>%
+  average_over_rgs_comparison() %>%
+  mutate(CalibrationMethod = factor(CalibrationMethod, levels = c("Raw","GATK","Initial-calls","KBBQ")))
+
+pdf('../figures/sim_comparison.pdf', width = 9, height = 7)
+ggplot(ngm_df, aes(PredictedQuality,ActualQuality, color = CalibrationMethod)) +
+  geom_abline(slope = 1, intercept = 0) +
+  geom_point(size = 2) +
+  geom_line(size = 1) + 
+  scale_color_OkabeIto(name = 'Calibration', use_black = T, drop = FALSE) +
+  xlab("Predicted Quality") +
+  ylab("Actual Quality") +
+  ggtitle("Calibration of Simulated Data")
+dev.off()
+
+#histogram
+freq_df <- bind_rows(
+    list(Raw = ngm_before_df, GATK = ngm_after_df, "Initial-calls" = bootstrap_df, KBBQ = kbbq_ngm_df),
+    .id = 'CalibrationMethod') %>%
+  rename(PredictedQuality = CovariateValue) %>%
+  mutate_at(vars(PredictedQuality), as.numeric) %>%
+  group_by(CalibrationMethod, PredictedQuality) %>%
+  mutate(CalibrationMethod = factor(CalibrationMethod, levels = c("Raw","GATK","Initial-calls","KBBQ")))
+
+pdf('../figures/sim_qual_counts.pdf', width = 9, height = 7)
+ggplot(freq_df, aes(PredictedQuality, Observations, color = CalibrationMethod)) +
+  geom_point(size = 1.5) +
+  geom_line(size = 1) +
+  scale_color_OkabeIto(name = 'Calibration', use_black = T, drop = FALSE) +
+  xlab("Predicted Quality") +
+  ylab("Actual Quality") +
+  ggtitle("Count of Each Quality Score")
+dev.off()
+
+
 # --- Print Tables ---
 fpr_rmse <- fpr_df %>% extract_rmse()
 fnr_rmse <- fnr_df %>% extract_rmse()
 fnrfpr_rmse <- fnrfpr_df %>% extract_rmse()
 comparison_rmse <- comparison_df %>% extract_rmse()
+sims_rmse <- ngm_df %>% extract_rmse()
 
 write_tsv(fpr_rmse, "../tables/fpr_rmse.txt")
 write_tsv(fnr_rmse, "../tables/fnr_rmse.txt")
 write_tsv(fnrfpr_rmse, "../tables/fnrfpr_rmse.txt")
 write_tsv(comparison_rmse, "../tables/comparison_rmse.txt")
+write_tsv(sims_rmse, "../tables/sims_rmse.txt")
