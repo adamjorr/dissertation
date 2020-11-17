@@ -175,11 +175,12 @@ plot_comparison_dfs <- function(comparison_dfs){
     geom_point(aes(color = CalibrationMethod), size = 2) +
     geom_line(aes(color = CalibrationMethod), size = 1) +
     # scale_color_brewer('Calibration\nMethod', palette = 'Dark2') +
-    scale_color_viridis_d('Calibration\nMethod') +
+    # scale_color_viridis_d('Calibration\nMethod') +
     scale_x_continuous("Predicted Quality") +
     scale_y_continuous('Actual Quality') +
     ggtitle('GATK and KBBQ Perform Similarly') +
-    coord_fixed(ratio = 1)
+    coord_fixed(ratio = 1) + 
+    scale_color_OkabeIto(name = '', use_black = T, order = c(1,2,3,7,8), drop = FALSE)
 }
 
 abbreviate_rate <- function(str){

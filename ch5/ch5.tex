@@ -18,17 +18,22 @@ The ultimate goal of quality scores and base quality score recalibration is to m
 
 \section{Methods}
 
-I simulated datsets with various recalibration quality using GATK's BaseQualityRecalibrator \parencite{auwera_fastq_2013}, but with variable site sets that were artificially crafted to have different rates of false positive and false negative calls, from 0 to 100 in steps of 20. The false positive rate of 100\% produced no output except in the case of 0\% false negative rate, which produced fewer calls than any other set. All datasets containing a 100\% false positive rate were therefore discarded.
+% Subsampling of database of variable sites - move this to Ch5
+In order to determine how misspecification of the database of variable sites affects the calibration of GATK's BQSR procedure \parencite{auwera_fastq_2013}, I simulated datasets with various levels of false negative and false positive variants. In this case, false negative variants in the database of variable sites causes a site that should be ignored to not be ignored, greatly increasing the number of bases that GATK classifies as sequencing errors. On the other hand, false positive variants remove a site from GATK classification, so the effect is likely to be small except for large false positive rates.
 
-This produced calibrations such that the higher the false negative and false positive rate, the less well-calibrated the output reads were. Refer to Chapter \ref{ch:kbbq} for more details on how the data was simulated and the CHM1-CHM13 truth set \parencite{li_synthetic-diploid_2018}. As a control, I compared each result to the raw, uncalibrated data. To see how a reference-free recalibration method affected variant calling, I also recalibrated the data with \texttt{kbbq}, with the options -\phantom{}-genomesize 214206308 and -a .15 .
+To create each simulated dataset, I began with the high coverage synthetic diploid dataset described in \cite{li_synthetic-diploid_2018} with reads aligned to hg19. This dataset was constructed by mixing DNA from the CHM1 and CHM13 hydatidiform mole cell lines to create a synthetic diploid sample. It inclued a VCF of variant calls and a BED file representing regions where the authors are confident the calls in the VCF are correct.
 
-I then called variants on each dataset using GATK HaplotypeCaller \parencite{poplin_scaling_2018} and evaluated the output SNP calls using RealTimeGenomics' RTG Tools vcfeval program \parencite{cleary_comparing_2015} and the truth set. I first ran the tool using the default settings, which also produces a ROC curve for the calls' GQ annotation. I also ran the tool using the -\phantom{}-vcf-score-field=QUAL option, which produces ROC curves for the site's QUAL annotation. This enabled comparison of the sensitivity and false positive rate trade-off of the two scores for each dataset. These two annotations were chosen because they represent an overall summary of the quality of the called variants.
+To create each false negative dataset, an appropriate number of sites from the VCF were randomly sampled with BCFTools and the shuf program. To create each false positive dataset, all sites from the VCF were extracted in BED format with the BCFTools query command, then subtracted from the BED of confident regions with bedtools subtract \parencite{quinlan_bedtools_2010}. The appropriate number of sites were then sampled with the shuf program and appended to the sites from the VCF to generate the BED file of all sites to exclude. Thus, I created variable site sets that were artificially crafted to have different rates of false positive and false negative calls, from 0 to 100 in steps of 20.
+These files were then provided as input to GATK's BaseRecalibrator tool and calibration was evaluated with GATK's AnalyzeCovariates tool.
 
-The false positive rate for the ROC curves was found by dividing the number of false positive calls in each dataset at each value of QUAL or GC and below by the number of true negative sites. The number of true negative sites was obtained by subtracting each true positive variant from the BED file containing the confident regions of the callset. This rate had to be computed, as vcfeval does not report a false positive rate. As the RTG-tools manual states, the program doesn't try to compute the possible number of true negatives, as calls could in theory occupy many or no reference bases. However, as I analyze only SNP data here, I am content to estimate the true number of negatives as the number of sites that are within the confident regions but outside variant sites specified by the truth set. The true positive rate was calculated by taking the number of true positive calls in each dataset for each value of QUAL or GC and dividing by the number of positive calls in the truth set, as reported by the vcfeval output.
+As a control, I compared each result to the raw, uncalibrated data. To see how a reference-free recalibration method affected variant calling, I also recalibrated the data with \texttt{kbbq}, with the options -\phantom{}-genomesize 214206308 and -a .15 .
+
+I then called variants on each dataset using GATK HaplotypeCaller \parencite{poplin_scaling_2018}. The false positive rate of 100\% produced no output calls except in the case of 0\% false negative rate, which produced fewer calls than any other set. All datasets containing a 100\% false positive rate were therefore discarded. I evaluated these output SNP calls using RealTimeGenomics' RTG Tools vcfeval program \parencite{cleary_comparing_2015} and the the confident region set along with the confident call set. I first ran the tool using the default settings, which also produces a ROC curve for the calls' GQ annotation. I also ran the tool using the -\phantom{}-vcf-score-field=QUAL option, which produces ROC curves for the site's QUAL annotation. This enabled comparison of the sensitivity and false positive rate trade-off of the two scores for each dataset. These two annotations were chosen because they represent an overall summary of the quality of the called variants.
+
+The false positive rate for the ROC curves was found by dividing the number of false positive calls in each dataset at each value of QUAL or GC and below by the number of true negative sites. The number of true negative sites was obtained by subtracting each true positive variant from the BED file containing the confident regions of the callset. This rate had to be computed, as vcfeval does not report a false positive rate. As the RTG-tools manual states, the program doesn't try to compute the possible number of true negatives, as calls could in theory occupy many or no reference bases. However, as I analyze only SNP data here,  estimating the true number of negatives as the number of sites that are within the confident regions but outside variant sites specified by the truth set should be sufficient. The true positive rate was calculated by taking the number of true positive calls in each dataset for each value of QUAL or GC and dividing by the number of positive calls in the truth set, as reported by the vcfeval output.
 
 To evaluate the output calls, I plotted the number of false positive and true positive SNP calls for each dataset. I also constructed a heat map showing the F-statistic of each dataset. This is the harmonic mean of the sensitivity and precision of the calls and is one way to summarize the accuracy of the calls. All plots and heatmaps were made using R \parencite{r_core_2020} and ggplot2 \parencite{wickham_ggplot2_2016} using the viridis color pallete \parencite{garnier_viridis_2018} to ensure the plots remain interpretable by those with colorblindness and after photocopying.
 
-%new paragraph
 %Filter info + justifications:
 %#filter: only snps
 %#filter: DP > 35 & DP < 65 (+-2 SDEV from mean of ~50 assuming poisson)
@@ -51,6 +56,100 @@ Finally, I ran KBBQ with the specified genome size 605951511 and coverage 240 to
 Scripts to reproduce these analyses are included in Appendix \ref{ch:evaluating_code}.
 
 \section{Results}
+% Hapdip Analysis
+To identify how errors in the database of variable sites affects variant calling, I simulated different datasets with known false positive rates, plotted the calibration and calculated the root mean squared error (RMSE) of the data recalibrated with the model trained using each database as the known sites input to GATK BaseRecalibrator. These plots are shown in figure \ref{figure:fpr}, and the RMSE of the quality score for each dataset is shown in table \ref{table:fpr}. For all these datasets, the false negative rate is 0. As the false positive rate increases, the degree of miscalibration doesn't change significantly except for the 100\% false positive rate dataset, which is very poorly calibrated; however, this calibration is likely an artifact (see section \ref{sec:kbbq_discussion}).
+
+\begin{figure}
+\centering
+	\includegraphics[width = .6\textwidth]{fpr.pdf}
+	\titlecaption{False Positive Only Calibration}{Base quality score calibration for a range of false positives in the database of variable sites. The false negative rate for all datasets is zero. Increasing the false positive rate does not significantly impact the quality of the calibration. The poor calibration at a 100\% false negative rate is likely an artifact (see Section \ref{sec:kbbq_discussion}).}
+	\label{figure:fpr}
+\end{figure}
+
+\begin{table}
+\centering
+\begin{tabular}{r l}
+\toprule
+False Positive Rate & RMSE \\
+\midrule
+0 & 0.60 \\
+20 & 0.58 \\
+40 & 0.53 \\
+60 & 0.49 \\
+80 & 0.49 \\
+100 & 5.50 \\
+\bottomrule
+\end{tabular}
+\titlecaption{False Positive Calibration Errors}{The root mean squared error of quality score for reads recalibrated using a database of variable sites with different false positive rates. The false negative rate for each dataset is 0\%.}
+\label{table:fpr}
+\end{table}
+
+I also simulated different databases of variable sites with differing false negative rates and similarly used it to recalibrate the CHM1-CHM13 data. In these datasets, the false positive rate is 0\%. The plotted calibration and RMSE of the recalibrated data is shown in figure \ref{figure:fnr} and table \ref{table:fnr}. As the false negative rate increases, the degree of miscalibration also steadily increases.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=.6\textwidth]{fnr.pdf}
+	\titlecaption{False Negative Only Calibration}{Base quality score calibration for a range of false negatives in the database of variable sites. The false positive rate for all datasets is zero. Increasing the false negative rate significantly decreases the quality of the calibration, causing increasing  underconfidence in quality scores as the false negative rate rises.}
+	\label{figure:fnr}
+\end{figure}
+
+\begin{table}
+\centering
+\begin{tabular}{r l}
+\toprule
+False Negative Rate & RMSE \\
+\midrule
+0 & 0.60 \\
+20 & 1.32 \\
+40 & 2.10 \\
+60 & 2.57 \\
+80 & 2.90 \\
+100 & 3.20 \\
+\bottomrule
+\end{tabular}
+\titlecaption{False Negative Calibration Errors}{Root mean squared error of quality score for reads recalibrated with a database of variable sites simulated with the given false negative rate. The false positive rate for each dataset is 0\%.}
+\label{table:fnr}
+\end{table}
+
+To see if there were any interactive effects of false positive rate and false negative rate, I also simulated datasets with varying false positive and false negative rates. The RMSE of the calibrated scores is reported in Table \ref{table:fnrfpr} and summarized in Figure \ref{figure:fnrfpr}. These datasets were simulated separately from the above datasets, so there are slight differences in the calibration of the resulting reads.
+As before, the number of false negatives significantly impacted calibration quality. In contrast to the false positive only dataset with a 0\% false negative rate, increasing the false positive rate also increased the amount of error in the calibration. Thus, false positives in the database of variable sites seem to enhance miscalibration caused by false negatives.
+
+\begin{figure}
+	\centering
+	\includegraphics[width = \textwidth]{fnrfpr.pdf}
+	\titlecaption{Combined Calibration}{Calibration of base quality scores of reads recalibrated using a database of variable sites with varying ranges of false negatives and false positives. The RMSE of the quality scores of the resulting calibration are used to color each line. Across the columns are each false negative rate, and each row represents a false positive rate. Except for at a false negative rate of 0, increasing either the false positive rate or the false negative rate increases the RMSE. See Table \ref{table:fnrfpr} for the RMSE values and the discussion in Section \ref{sec:kbbq_discussion} about false positive rates of 100\%}
+	\label{figure:fnrfpr}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = .6\textwidth]{fnrfpr_heatmap.pdf}
+	\titlecaption{Combined Calibration Heat Map}{Heat map of base quality calibration of varying ranges of false negatives and false positives. Databases of variable sites with differing false positive and false negative rates were constructed and the RMSE of the quality scores of the resulting calibration were calculated. Across the columns are each false negative rate, and each row represents a false positive rate. Except for at a false negative rate of 0, increasing either the false positive rate or the false negative rate increases the RMSE. See Table \ref{table:fnrfpr} for the RMSE values and the discussion in Section \ref{sec:kbbq_discussion} about false positive rates of 100\%}
+	\label{figure:fnrfpr_heat}
+\end{figure}
+
+\begin{table}
+\centering
+\begin{tabularx}{.5\textwidth}{ l  X  X  X  X  X  X }
+\toprule
+\multirow{2}{*}{FPR} & \multicolumn{6}{c}{FNR} \\ \cmidrule(lr){2-7}
+    & 0    &   20 &   40 &   60 &   80 &   100 \\
+%&    &      &      &      &      &      & \\ %blank line
+\midrule
+0   & .641 & 1.45 & 2.08 & 2.73 & 2.99 & 3.38 \\
+20  & .599 & 1.73 & 2.54 & 2.96 & 3.39 & 3.76 \\
+40  & .555 & 2.02 & 2.71 & 3.50 & 3.84 & 4.16 \\
+60  & .531 & 2.58 & 3.37 & 4.27 & 4.51 & 4.73 \\
+80  & .593 & 3.52 & 4.62 & 5.38 & 5.73 & 6.32 \\
+100 & 8.05 & 22.0 & 24.3 & 26.4 & 25.8 & 28.9 \\
+\bottomrule
+\end{tabularx}
+\titlecaption{Combined Calibration Errors}{Root mean squared error of base quality score for data calibrated with databases of variable sites containing different levels of false positives and false negatives. The columns indicate false positive rates, the rows indicate false negative rates. The values in each cell are the RMSE of the quality scores for the reads recalibrated with the database of variable sites with false positive and false negative rate appropriate for its row and column. See Figure \ref{figure:fnrfpr_heat} for a graphical representation. The data in the 100\% false positive rows are likely artifacts; see section \ref{sec:kbbq_discussion} for more information.}
+\label{table:fnrfpr}
+\end{table}
+
+
+% Variant Call Evaluation
 
 To evaluate the output calls, I plotted the number of true positives and false positives for each dataset recalibrated using sets of variable sites with differing false negative and false negative rates (Figure \ref{fig:vc_fptp}). This shows that after recalibration, improved calibration increases the number of true positive variants called. However, improved calibration also increases the number of false positives. More detail about the relationship between false positives and negatives in the database of calibrated sites are shown in the heat maps in Figure \ref{fig:vc_p}. Interestingly, the raw uncalibrated data exhibited the most positive calls of any other callset.
 
@@ -237,9 +336,16 @@ Only variable sites & 88 & - & 34\\
 \end{table}
 
 \section{Discussion}
+\label{sec:kbbq_discussion}
 
-%todo: talk about F statistics
-%todo: discuss e mel results
+These results show that GATK BaseRecalibrator is particularly vulnerable to false negatives (Figure \ref{figure:fnr}) in the database of variable sites, but is robust to false positives if the false negative rate is near 0 (Figure \ref{figure:fpr}). At the same time, when the false negative rate is not near 0, false positives will start to impact the calibration quality (Figure \ref{figure:fnrfpr}). Thus, when this database is unavailable and construction is required, it may be better to be liberal in deciding which sites may be variable to reduce the false negative rate as much as possible. This is in contrast to the GATK recommendation to use only the most confident sites when a database is unavailable.
+
+The only rate that shows significant deviation from a 0\% false positive rate in the false-positive-only data is the 100\% false positive rate. Though a 100\% false positive rate with a 0\% false negative rate implies every site should be considered variable and ignored, the model curiously still has a source of errors it uses to recalibrate. Upon further investigation, this effect is driven by reads with alignments that begin with an insertion, as these inserted bases are not ignored by BaseRecalibrator when the first position of the site that should be ignored is equal to the first aligned position in the read. Thus, this line is a technical artifact. So long as there are enough bases available to analyze, the false positive rate doesn't significantly affect the performace of BaseRecalibrator at a false negative rate of 0. The calibrations of other datasets with a false positive rate of 100\% would also be affected by this artifact; however, in a real dataset it's unlikely to ever achieve a false positive rate of 100\%, so this artifact is unlikely to significantly affect real data.
+
+%new para
+Ultimately, if the false negative and false positive rates of the database of variable sites is high, GATK's procedure for BQSR \textit{can} cause miscalibration of the data worse than using raw quality scores, though this can only happen with very large error rates. In this dataset, the raw data has a RMSE of about 4, which is similar to a simulated dataset with a false negative rate between 40-60\% and a false positive rate between 60-80\%. In a real situation it's unlikely that error rates like this will occur, so BQSR will not severely destroy the input data. However, at even modest false negative and false positive error rates BQSR can cause undesirable miscalibration that could feasibly impact variants called from the data. Interestingly, at all error rates the calibration of quality scores below 25 is almost always correct or 1-off the true value. It seems that errors in the database of variable sites have a larger effect on higher quality predictions than lower ones.
+
+Interestingly, overconfidence is not displayed in the reads recalibrated using the artificially constructed database of variable sites. This is likely because of how these variant sets were constructed; non-variable sites were selected independently and at random to be added to the set of purported variable sites. Thus a site containing an error and a site not containing an error are selected proportionally. In contrast, on a real dataset a variant calling algorithm would not make false positive errors independently; it is much more likely to classify a site as variable that has a sequencing error than to classify a site as variable that has no errors. That is: in this simulation, $P(\operatorname{classified\:positive} | \operatorname{actual\:negative})$ is independent of $P(\operatorname{sequencing\:error})$, but on an empirical dataset $P(\operatorname{classified\:positive} | \operatorname{actual\:negative})$ is likely not. Thus in reality false positives probably cause overconfidence in a similar manner that false negatives cause underconfidence.
 
 Overall, these results show that as the quality of the calibration increases, the quality of the variant calls also slightly increases. The difference is very small, but better calibration produces more positive calls, with more true positive calls than any other recalibrated dataset. And though I only filtered the data with two fairly lenient filters, the best calibrations still produced the most true positive calls of any dataset. The exception to this is the calls made from data with the raw quality scores, which are not as well-calibrated (see Chapter \ref{ch:kbbq}) but produce more positive calls.
 

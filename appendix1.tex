@@ -1,3 +1,7 @@
+%hack to change the last header on the TOC to say APPENDIX
+% \addtocontents{toc}{\protect\clearpage\lhead[APPENDIX]{APPENDIX}}
+\addtocontents{toc}{\protect\afterpage{\lhead[APPENDIX]{APPENDIX}}}
+
 \chapter{Code to Reproduce Analyses in Appendix \protect\structuredref{}}
 \label{ch:structured_code}
 \newpage
@@ -30,8 +34,6 @@
 \inputminted[breaklines, breakanywhere, tabsize=2]{Makefile}{ch5/scripts/euc_variants_makefiles.txt}
 \section{ROC Plotting Code}
 \inputminted[breaklines, breakanywhere, tabsize=2]{r}{ch5/scripts/roc_plots.R}
-%hack to change the last header on the TOC to say APPENDIX
-\addtocontents{toc}{\protect\clearpage\lhead[APPENDIX]{APPENDIX}}
 \section{Summary Plotting Code}
 \inputminted[breaklines, breakanywhere, tabsize=2]{r}{ch5/scripts/hapdip_summary_plots.R}
 
