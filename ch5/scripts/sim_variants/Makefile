@@ -1,74 +1,88 @@
-DATADIR = ../../../
-VCFIN = $(DATADIR)/chr1.vcf.gz
-BEDIN = $(DATADIR)/chr1_confident.bed.gz
-REFIN = $(DATADIR)/chr1.renamed.fa
-RAWBAM =  ../chr1_only_confident.fixmate.sorted.bam
-PROCESSEDBAM = raw.bam
+SHELL = bash
+REF = ../sampled_contigs.fa.gz
+REFDICT = $(basename $(basename $(REF))).dict
+TRUESNPS = ../simug.refseq2simseq.SNP.vcf.gz
+TARGETVCFS = ngm.vcf.gz ngm.recal.vcf.gz kbbq-ngm.recal.vcf.gz initial-calls.recal.vcf.gz
+RTGTARGETS = $(addsuffix .d/calls.vcf.gz,$(TARGETVCFS))
+SUMMARYTARGETS = $(addsuffix .summary.txt,$(TARGETVCFS))
+QUALROCS = $(addsuffix _QUAL_ROC/snp_roc.tsv.gz,$(TARGETVCFS))
+GQROCS = $(addsuffix _GQ_ROC/snp_roc.tsv.gz,$(TARGETVCFS))
+QUALROCTARGETS = $(addsuffix _QUAL.snp_roc.tsv.gz,$(TARGETVCFS))
+GQROCTARGETS = $(addsuffix _GQ.snp_roc.tsv.gz,$(TARGETVCFS))
 HAPDIPJS = $(HOME)/bin/hapdip/hapdip.js
-
-INPUTINCREMENT = 20
-INPUTFIRST = 0
-INPUTLAST = 100
-
-SHELL=bash
-FPRS := $(shell seq $(INPUTFIRST) $(INPUTINCREMENT) $(INPUTLAST))
-#FNR_FPR
-ADD_FPRS = $(addsuffix _$(FPR),$(FPRS))
-ERRATES := $(foreach FPR,$(FPRS),$(ADD_FPRS))
-ERRATES := $(ERRATES) cbbq
-ERBAMS := $(addprefix ../,$(addsuffix .recal.bam,$(ERRATES)))
-ERVCFS := $(addsuffix .vcf.gz,$(ERRATES))
-RTGCALLS := $(addsuffix /calls.vcf.gz,$(ERRATES))
-SNPSUMS := $(addsuffix /hapdip_summary.txt,$(ERRATES))
-OUTSUMS := $(addsuffix .summary.txt,$(ERRATES))
-
-#index helpers
-%.bed.gz.tbi: %.bed.gz
-	tabix -p bed $<
-
-%.vcf.gz.tbi: %.vcf.gz
-	bcftools index -t $<
-
-%.bam.bai: %.bam
-	samtools index $<
-
-%.fa.sdf: %.fa
-	rtg format -o $@ $<
-
-.PHONY: all
-
-.DEFAULT: all
 
 .PRECIOUS:
 
 .SECONDARY:
 
-all: $(OUTSUMS)
+.PHONY: variants summaries rocs
 
-$(ERVCFS): %.vcf.gz: ../%.recal.bam $(REFIN) $(BEDIN)
-	gatk HaplotypeCaller -R $(word 2, $^) -I $< -L $(word 3, $^) --native-pair-hmm-threads 16 -O $@ --QUIET true
+.DEFAULT: summaries
 
-$(PROCESSEDBAM): $(RAWBAM)
-	gatk RevertBaseQualityScores -I $< -O $@
+#index helpers
+%.fa.gz.fai: %.fa.gz
+	samtools faidx $<
 
-raw.vcf.gz: $(PROCESSEDBAM) $(REFIN) $(BEDIN)
-	gatk HaplotypeCaller -R $(word 2, $^) -I $< -L $(word 3, $^) --native-pair-hmm-threads 16 -O $@ --QUIET true
+%.bam.bai: %.bam
+	samtools index $<
 
-#benchmarking result directories
-$(RTGCALLS): %/calls.vcf.gz: %.vcf.gz $(VCFIN) $(BEDIN) $(REFIN).sdf
-	rm -rf $(dir $@) && rtg vcfeval -b $(word 2, $^) -c $< -e $(word 3, $^) -o $(dir $@) -t $(word 4, $^) --output-mode=annotate -T 1
+%.vcf.gz: %.vcf
+	bgzip -c $< > $@
 
-raw/calls.vcf.gz: raw.vcf.gz $(VCFIN) $(BEDIN) $(REFIN).sdf
-	rm -rf $(dir $@) && rtg vcfeval -b $(word 2, $^) -c $< -e $(word 3, $^) -o $(dir $@) -t $(word 4, $^) --output-mode=annotate -T 8
+%.vcf.gz.tbi: %.vcf.gz
+	bcftools index -t $<
 
-$(SNPSUMS): %/hapdip_summary.txt: %/calls.vcf.gz
-	k8 $(HAPDIPJS) rtgeval $(BEDIN) $(dir $@) > $@
+%.dict: %.fa
+	gatk CreateSequenceDictionary -R $<
 
-raw/hapdip_summary.txt: raw/calls.vcf.gz
-	k8 $(HAPDIPJS) rtgeval $(BEDIN) $(dir $@) > $@
+%.dict: %.fa.gz
+	gatk CreateSequenceDictionary -R $<
 
-$(OUTSUMS): %.summary.txt: %/hapdip_summary.txt
+%.fa.gz.sdf: %.fa.gz
+	rtg format -o $@ $<
+
+
+#theta 0.025
+
+#get initial calls with HC and use them to recalibrate
+$(TARGETVCFS): %.vcf.gz : ../%.bam $(REF) ../%.bam.bai $(REFDICT)
+	gatk HaplotypeCaller -R $(word 2, $^) -I $< --native-pair-hmm-threads 8 -O $@ --heterozygosity 0.025
+
+variants: $(TARGETVCFS)
+
+sim_sample_snps.vcf.gz: $(TRUESNPS)
+	bcftools view $< | \
+	sed '/^#[^#]/s/$$/\tFORMAT\tsim/' | \
+	sed '/^#/!s/$$/\tGT\t0|1/' | \
+	bgzip -c > $@
+
+#evaluate with rtg
+$(RTGTARGETS): %.vcf.gz.d/calls.vcf.gz: %.vcf.gz sim_sample_snps.vcf.gz $(REF).sdf sim_sample_snps.vcf.gz.tbi
+	rm -rf $(dir $@) && rtg vcfeval -b $(word 2, $^) -c $< -o $(dir $@) -t $(word 3, $^) --output-mode=annotate -T 8
+
+#we don't have any non-confident regions; use the whole genome
+conf.bed: $(REF).fai
+	cat $< | awk -v OFS='\t' '{print $$1, 0, $$2}' > $@
+
+%.d/hapdip_summary.txt: %.d/calls.vcf.gz conf.bed
+	k8 $(HAPDIPJS) rtgeval $(word 2, $^) $(dir $@) > $@
+
+$(SUMMARYTARGETS): %.summary.txt: %.d/hapdip_summary.txt
 	cp $< $@
 
-raw.summary.txt: raw/hapdip_summary.txt
+summaries: $(SUMMARYTARGETS)
+
+#QUALROCS = $(addsuffix _QUAL_ROC/snp_roc.tsv.gz,$(TARGETVCFS))
+$(QUALROCS): %.vcf.gz_QUAL_ROC/snp_roc.tsv.gz: %.vcf.gz sim_sample_snps.vcf.gz $(REF).sdf sim_sample_snps.vcf.gz.tbi
+	rm -rf $(dir $@) && rtg vcfeval -b $(word 2, $^) -c $< -t $(word 3, $^) --output-mode=roc-only --vcf-score-field=QUAL -T 4 -o $(dir $@)
+
+$(QUALROCTARGETS): %.vcf.gz_QUAL.snp_roc.tsv.gz: %.vcf.gz_QUAL_ROC/snp_roc.tsv.gz
 	cp $< $@
+
+$(GQROCS): %.vcf.gz_GQ_ROC/snp_roc.tsv.gz: %.vcf.gz sim_sample_snps.vcf.gz $(REF).sdf sim_sample_snps.vcf.gz.tbi
+	rm -rf $(dir $@) && rtg vcfeval -b $(word 2, $^) -c $< -t $(word 3, $^) --output-mode=roc-only --vcf-score-field=GQ -T 4 -o $(dir $@)
+
+$(GQROCTARGETS): %.vcf.gz_GQ.snp_roc.tsv.gz: %.vcf.gz_GQ_ROC/snp_roc.tsv.gz
+	cp $< $@
+
+rocs: $(QUALROCTARGETS) $(GQROCTARGETS)
