@@ -1,7 +1,17 @@
+% !TEX program=lualatex
+% !TEX options=--shell-escape
 
 \documentclass[12pt,letterpaper]{report}
 % \usepackage{natbib}
-\usepackage[style=nature, citestyle=authoryear, refsegment=chapter]{biblatex}
+%\usepackage[style=nature, citestyle=authoryear, refsegment=chapter]{biblatex}
+\usepackage[authordate,backend=biber,doi=only,isbn=false,noibid=true,
+            refsegment=chapter,date=year,dashed=false,sortcites=true]{biblatex-chicago}
+
+\AtEveryBibitem{
+    \clearfield{urlyear}
+    \clearfield{urlmonth}
+}
+
 \usepackage{geometry}
 %\usepackage{fancyheadings} fancyheadings is obsolete: replaced by fancyhdr. JL
 \usepackage{fancyhdr}
@@ -21,7 +31,7 @@
 \usepackage{tabularx}
 \usepackage{multirow}
 \usepackage{minted}
-\usepackage{textcase}
+\usepackage[overload]{textcase}
 % \usepackage{caption}
 
 
@@ -120,8 +130,6 @@
 %\bibliography{dis}
 
 \printbibliography{}
-% \printbibheading[title=References]{}
-% \bibbysection{}
 }
 \renewcommand{\chaptername}{APPENDIX}
 \addtocontents{toc}{APPENDIX \par}
