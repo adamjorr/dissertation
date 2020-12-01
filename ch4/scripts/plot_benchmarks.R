@@ -277,7 +277,7 @@ pdf('../figures/comparison.pdf', width = 9, height = 7)
 plot_comparison_dfs(comparison_df)
 dev.off()
 
-# --- Simulated Data ---
+  # --- Simulated Data ---
 ngm_before_df <- get_gatk_csv_file('ngm') %>% read_csv() %>% filter(CovariateName == 'QualityScore' & Recalibration == 'Before')
 ngm_after_df <- get_gatk_csv_file('ngm') %>% read_csv() %>% filter(CovariateName == 'QualityScore' & Recalibration == 'After')
 kbbq_ngm_df <- get_gatk_csv_file('kbbq-ngm') %>% read_csv() %>% filter(CovariateName == 'QualityScore' & Recalibration == 'After')
