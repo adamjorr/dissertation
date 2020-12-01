@@ -59,3 +59,4 @@ data_df %>% ggplot(aes(group, quality, family = 'Times')) +
   scale_color_OkabeIto(name = '', use_black = T, order = c(1,2,3,7,8), drop = FALSE)
 
 dev.off()
+      

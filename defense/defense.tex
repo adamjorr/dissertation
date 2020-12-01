@@ -200,7 +200,7 @@ Use \textit{E. grandis} genome as a starting place, then generate a new referenc
 	\end{center}
 \end{frame}
 
-\begin{frame}{Using Random Trees to Estimate False Positive Rate}
+\begin{frame}{Using Random Trees to Estimate False Discovery Rate}
 \begin{itemize}
 	\item If we assume mutations should match the tree structure, no real mutations should also match a random maximally-distant tree.
 	\item Simulate 100 trees maximally distant from the true tree and ask how many the pipeline detects on average.
@@ -401,32 +401,6 @@ One site isn't excluded; only one base is really an error. $\frac{4}{9}$ bases a
 
 \begin{frame}{Example Recalibration}
 \includegraphics[width = \linewidth]{recalibration_explainer.pdf}
-\end{frame}
-
-
-
-\begin{frame}{GATK BQSR uses a hierarchical linear model to determine how much to adjust each quality score}
-
-\begin{displaymath}
-Q = \bar{Q} + \Delta RG + \Delta{} Q + \Delta{} C (Cycle) + \Delta{} X (Context)
-\end{displaymath}
-
-\begin{displaymath}
-\Delta{}RG = argmax_{q}\{P(\mathcal{B}(RG_{t},q) = RG_{e}) * P(\mathcal{N}(\bar{Q}) = q)\} - \bar{Q}
-\end{displaymath}
-
-\begin{displaymath}
-\Delta Q = argmax_{q}\{P(\mathcal{B}(Q_{t},q) = Q_{e}) * P(\mathcal{N}(\bar{Q} + \Delta RG) = q)\} - (\bar{Q} + \Delta RG)
-\end{displaymath}
-
-\begin{multline}
-\Delta Cycle = argmax_{q}\{P(\mathcal{B}(C_{t},q) = C_{e}) * P(\mathcal{N}(\bar{Q} + \Delta RG + \Delta Q) = q)\} \\ - (\bar{Q} + \Delta RG + \Delta Q)
-\end{multline}
-
-\begin{multline}
-\Delta Context = argmax_{q}\{P(\mathcal{B}(X_{t},q) = X_{e}) * P(\mathcal{N}(\bar{Q} + \Delta RG + \Delta Q) = q)\} \\ - (\bar{Q} + \Delta RG + \Delta Q)
-\end{multline}
-
 \end{frame}
 
 
@@ -661,13 +635,6 @@ The calculated allele frequency is $\frac{40 * 5}{40 * 5 + 30 * 5} = .57$
 \end{columns}
 \end{frame}
 
-\begin{frame}{Calibration Changes Variant QUAL Annotation}
-The QUAL field represents the likelihood a site is variable.
-\vskip 1em
-\centering
-\includegraphics[width=.6\linewidth]{0fpr_roc.pdf}
-\end{frame}
-
 \begin{frame}{The Difference in Sensitivity and Precision is Small}
 \begin{columns}
 \column{.5\linewidth}
@@ -676,6 +643,15 @@ The QUAL field represents the likelihood a site is variable.
 \includegraphics[width=.9\linewidth]{precision.pdf}
 \end{columns}
 \end{frame}
+
+\begin{frame}{Calibration Changes Variant QUAL Annotation}
+The QUAL field represents the likelihood a site is variable.
+\vskip 1em
+\centering
+\includegraphics[width=.6\linewidth]{0fpr_roc.pdf}
+\end{frame}
+
+
 
 \begin{frame}{Despite Benchmark Data Results, Recalibration Improved \textit{E. melliodora} Calls}
 \begin{tabular}{r l l l}
@@ -727,5 +703,33 @@ Dissertation: \faicon{github} \url{https://github.com/adamjorr/dissertation}
 \end{columns}
 
 \end{frame}
+
+
+
+\begin{frame}{GATK BQSR uses a hierarchical linear model to determine how much to adjust each quality score}
+
+\begin{displaymath}
+Q = \bar{Q} + \Delta RG + \Delta{} Q + \Delta{} C (Cycle) + \Delta{} X (Context)
+\end{displaymath}
+
+\begin{displaymath}
+\Delta{}RG = argmax_{q}\{P(\mathcal{B}(RG_{t},q) = RG_{e}) \times P(\mathcal{N}(\bar{Q}) = q)\} - \bar{Q}
+\end{displaymath}
+
+\begin{displaymath}
+\Delta Q = argmax_{q}\{P(\mathcal{B}(Q_{t},q) = Q_{e}) \times P(\mathcal{N}(\bar{Q} + \Delta RG) = q)\} - (\bar{Q} + \Delta RG)
+\end{displaymath}
+
+\begin{multline}
+\Delta Cycle = argmax_{q}\{P(\mathcal{B}(C_{t},q) = C_{e}) \times P(\mathcal{N}(\bar{Q} + \Delta RG + \Delta Q) = q)\} \\ - (\bar{Q} + \Delta RG + \Delta Q)
+\end{multline}
+
+\begin{multline}
+\Delta Context = argmax_{q}\{P(\mathcal{B}(X_{t},q) = X_{e}) \times P(\mathcal{N}(\bar{Q} + \Delta RG + \Delta Q) = q)\} \\ - (\bar{Q} + \Delta RG + \Delta Q)
+\end{multline}
+
+\end{frame}
+
+
 
 \end{document}
